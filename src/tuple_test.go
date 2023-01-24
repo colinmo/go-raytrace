@@ -33,6 +33,7 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tupleEqualsTuple)
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) ← point\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tuplepPoint)
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) ← vector\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tuplevVector)
+			ctx.Step(`^tuple\.([a-zA-Z0-9]+) \+ tuple\.([a-zA-Z0-9]+) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tupleAPlusBEqualsC)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -53,6 +54,38 @@ func floatOrErr(float string) (float64, error) {
 	return 0.0, fmt.Errorf(`"%s" could not be floated`, float)
 }
 
+func (tt *tupletest) tupleAPlusBEqualsC(varNameA, varNameB, x, y, z, w string) error {
+	xF, err := floatOrErr(x)
+	if err != nil {
+		return err
+	}
+	yF, err := floatOrErr(y)
+	if err != nil {
+		return err
+	}
+	zF, err := floatOrErr(z)
+	if err != nil {
+		return err
+	}
+	wF, err := floatOrErr(w)
+	if err != nil {
+		return err
+	}
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	b, ok := tt.Tuples[varNameB]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameB)
+	}
+	tempTuple := Tuple{X: xF, Y: yF, Z: zF, W: wF}
+	if a.Add(b).EqualsTuple(tempTuple) {
+		return nil
+	}
+	return fmt.Errorf("Tuple %v doesn't equal %v", a, tempTuple)
+
+}
 func (tt *tupletest) tupleEqualsTuple(varName, x, y, z, w string) error {
 	xF, err := floatOrErr(x)
 	if err != nil {
@@ -94,19 +127,19 @@ func (tt *tupletest) aFloatValueEqual(varName, field, xyzw string) error {
 	}
 	switch field {
 	case "x":
-		if !EpsilonEquals(a.X, valF) {
+		if !epsilonEquals(a.X, valF) {
 			return fmt.Errorf("X value %f didn't equal %f", a.X, valF)
 		}
 	case "y":
-		if !EpsilonEquals(a.Y, valF) {
+		if !epsilonEquals(a.Y, valF) {
 			return fmt.Errorf("Y value %f didn't equal %f", a.Y, valF)
 		}
 	case "z":
-		if !EpsilonEquals(a.Z, valF) {
+		if !epsilonEquals(a.Z, valF) {
 			return fmt.Errorf("Z value %f didn't equal %f", a.Z, valF)
 		}
 	case "w":
-		if !EpsilonEquals(a.W, valF) {
+		if !epsilonEquals(a.W, valF) {
 			return fmt.Errorf("W value %f didn't equal %f", a.W, valF)
 		}
 	}

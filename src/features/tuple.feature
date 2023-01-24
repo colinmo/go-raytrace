@@ -24,6 +24,12 @@ Feature: Tuple checks
     Scenario: point() creates tuples with w=1
         Given tuple.p ← point(4, -4, 3)
         Then tuple.p = tuple(4, -4, 3, 1)
+
     Scenario: vector() creates tuples with w=0
         Given tuple.v ← vector(4, -4, 3)
         Then tuple.v = tuple(4, -4, 3, 0)
+
+    Scenario: Adding two tuples
+        Given tuple.a1 ← tuple(3, -2, 5, 1)
+        And tuple.a2 ← tuple(-2, 3, 1, 0)
+        Then tuple.a1 + tuple.a2 = tuple(1, 1, 6, 1)
