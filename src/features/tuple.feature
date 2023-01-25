@@ -64,3 +64,40 @@ Feature: Tuple checks
     Scenario: Multiplying a tuple by a fraction
         Given tuple.a ← tuple(1, -2, 3, -4)
         Then tuple.a * 0.5 = tuple(0.5, -1, 1.5, -2)
+    Scenario: Dividing a tuple by a scalar
+        Given tuple.a ← tuple(1, -2, 3, -4)
+        Then tuple.a / 2 = tuple(0.5, -1, 1.5, -2)
+    Scenario: Computing the magnitude of vector(1, 0, 0)
+        Given tuple.v ← vector(1, 0, 0)
+        Then magnitude(tuple.v) = 1
+    Scenario: Computing the magnitude of vector(0, 1, 0)
+        Given tuple.v ← vector(0, 1, 0)
+        Then magnitude(tuple.v) = 1
+    Scenario: Computing the magnitude of vector(0, 0, 1)
+        Given tuple.v ← vector(0, 0, 1)
+        Then magnitude(tuple.v) = 1
+    Scenario: Computing the magnitude of vector(1, 2, 3)
+        Given tuple.v ← vector(1, 2, 3)
+        Then magnitude(tuple.v) = √14
+    Scenario: Computing the magnitude of vector(-1, -2, -3)
+        Given tuple.v ← vector(-1, -2, -3)
+        Then magnitude(tuple.v) = √14
+    Scenario: Normalizing vector(4, 0, 0) gives (1, 0, 0)
+        Given tuple.v ← vector(4, 0, 0)
+        Then normalize(tuple.v) = vector(1, 0, 0)
+    Scenario: Normalizing vector(1, 2, 3)
+        Given tuple.v ← vector(1, 2, 3)
+        Then normalize(tuple.v) = vector(0.26726, 0.53452, 0.80178)
+    Scenario: The magnitude of a normalized vector
+        Given tuple.v ← vector(1, 2, 3)
+        When tuple.norm ← normalize(tuple.v)
+        Then magnitude(tuple.norm) = 1
+    Scenario: The dot product of two tuples
+        Given tuple.a ← vector(1, 2, 3)
+        And tuple.b ← vector(2, 3, 4)
+        Then dot(tuple.a, tuple.b) = 20
+    Scenario: The cross product of two vectors
+        Given tuple.a ← vector(1, 2, 3)
+        And tuple.b ← vector(2, 3, 4)
+        Then cross(tuple.a, tuple.b) = vector(-1, 2, -1)
+        And cross(tuple.b, tuple.a) = vector(1, -2, 1)

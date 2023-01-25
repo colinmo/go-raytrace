@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"math"
 	"strconv"
 	"testing"
 
@@ -39,6 +40,13 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) - tuple\.([a-zA-Z0-9]+) = point\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.pointMinusVectorEqualsPoint)
 			ctx.Step(`^-tuple\.([a-zA-Z0-9]+) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.negativeTupleEquals)
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) \* (-?\d+(?:\.\d+)?) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tupleMultipliedScalarEquals)
+			ctx.Step(`^tuple\.([a-zA-Z0-9]+) \/ (-?\d+(?:\.\d+)?) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tupleDividedScalarEquals)
+			ctx.Step(`^magnitude\(tuple\.([a-zA-Z0-9]+)\) = (-?\d+(?:\.\d+)?)$`, tt.magnitudeTupleEquals)
+			ctx.Step(`^magnitude\(tuple\.([a-zA-Z0-9]+)\) = √(\d+(?:\.\d+)?)$`, tt.magnitudeTupleEqualsSqrt)
+			ctx.Step(`^normalize\(tuple\.([a-zA-Z0-9]+)\) = vector\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.normalizeTupleEqualsVector)
+			ctx.Step(`^tuple\.([a-zA-Z0-9]+) ← normalize\(tuple\.([a-zA-Z0-9]+)\)$`, tt.tupleNormalizeEqualsTuple)
+			ctx.Step(`^dot\(tuple\.([a-zA-Z0-9]+), tuple\.([a-zA-Z0-9]+)\) = (-?\d+(?:\.\d+)?)$`, tt.dotTupleaTupleb)
+			ctx.Step(`^cross\(tuple\.([a-zA-Z0-9]+), tuple\.([a-zA-Z0-9]+)\) = vector\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.crossTuplebTupleaVector)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -177,6 +185,104 @@ func (tt *tupletest) tupleMultipliedScalarEquals(varNameA string, scalar float64
 	return fmt.Errorf("Tuple %v times %f doesn't equal %v", a, scalar, tempTuple)
 }
 
+func (tt *tupletest) tupleDividedScalarEquals(varNameA string, scalar float64, x, y, z, w string) error {
+	tempTuple, err := StringsToTuple(x, y, z, w)
+	if err != nil {
+		return err
+	}
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	if a.DivideScalar(scalar).EqualsTuple(tempTuple) {
+		return nil
+	}
+	return fmt.Errorf("Tuple %v times %f doesn't equal %v", a, scalar, tempTuple)
+}
+
+func (tt *tupletest) magnitudeTupleEquals(varName string, target float64) error {
+	a, ok := tt.Tuples[varName]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varName)
+	}
+	if a.Magnitude() == target {
+		return nil
+	}
+	return fmt.Errorf("Magnitude Tuple %v equals %f not %f", a, a.Magnitude(), target)
+
+}
+
+func (tt *tupletest) magnitudeTupleEqualsSqrt(varName string, target float64) error {
+	return tt.magnitudeTupleEquals(varName, math.Sqrt(target))
+}
+
+func (tt *tupletest) normalizeTupleEqualsVector(varName, x, y, z string) error {
+	a, ok := tt.Tuples[varName]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varName)
+	}
+	xF, err := floatOrErr(x)
+	if err != nil {
+		return err
+	}
+	yF, err := floatOrErr(y)
+	if err != nil {
+		return err
+	}
+	zF, err := floatOrErr(z)
+	if err != nil {
+		return err
+	}
+	if a.Normalize().EqualsTuple(NewVector(xF, yF, zF)) {
+		return nil
+	}
+	return fmt.Errorf("Normalized tuple %v doesn't equal %v", a, NewVector(xF, yF, zF))
+}
+
+func (tt *tupletest) tupleNormalizeEqualsTuple(varNameA, varNameB string) error {
+	b, ok := tt.Tuples[varNameB]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameB)
+	}
+	tt.Tuples[varNameA] = b.Normalize()
+	return nil
+}
+
+func (tt *tupletest) dotTupleaTupleb(varNameA, varNameB string, expected float64) error {
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	b, ok := tt.Tuples[varNameB]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameB)
+	}
+	if a.DotProduct(b) == expected {
+		return nil
+	}
+	return fmt.Errorf("dot product of %v and %v is %f not %f", a, b, a.DotProduct(b), expected)
+}
+
+func (tt *tupletest) crossTuplebTupleaVector(varNameA, varNameB, x, y, z string) error {
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	b, ok := tt.Tuples[varNameB]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameB)
+	}
+	expected, err := StringsToVector(x, y, z)
+	if err != nil {
+		return err
+	}
+	if a.CrossProduct(b).EqualsTuple(expected) {
+		return nil
+	}
+	return fmt.Errorf("dot product of %v and %v is %v not %v", a, b, a.CrossProduct(b), expected)
+
+}
+
 func (tt *tupletest) tupleEqualsTuple(varName, x, y, z, w string) error {
 	tempTuple, err := StringsToTuple(x, y, z, w)
 	if err != nil {
@@ -248,6 +354,21 @@ func StringsToTuple(x, y, z, w string) (Tuple, error) {
 		return Tuple{}, err
 	}
 	return Tuple{xF, yF, zF, wF}, nil
+}
+func StringsToVector(x, y, z string) (Tuple, error) {
+	xF, err := floatOrErr(x)
+	if err != nil {
+		return Tuple{}, err
+	}
+	yF, err := floatOrErr(y)
+	if err != nil {
+		return Tuple{}, err
+	}
+	zF, err := floatOrErr(z)
+	if err != nil {
+		return Tuple{}, err
+	}
+	return NewVector(xF, yF, zF), nil
 }
 
 func (tt *tupletest) aIsAPoint(varName string) error {
