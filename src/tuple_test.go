@@ -3,9 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/cucumber/godog"
 	"strconv"
 	"testing"
+
+	"github.com/cucumber/godog"
 )
 
 type tuples map[string]Tuple
@@ -34,6 +35,10 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) ← point\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tuplepPoint)
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) ← vector\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tuplevVector)
 			ctx.Step(`^tuple\.([a-zA-Z0-9]+) \+ tuple\.([a-zA-Z0-9]+) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tupleAPlusBEqualsC)
+			ctx.Step(`^tuple\.([a-zA-Z0-9]+) - tuple\.([a-zA-Z0-9]+) = vector\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.pointMinusPointEqualsVector)
+			ctx.Step(`^tuple\.([a-zA-Z0-9]+) - tuple\.([a-zA-Z0-9]+) = point\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.pointMinusVectorEqualsPoint)
+			ctx.Step(`^-tuple\.([a-zA-Z0-9]+) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.negativeTupleEquals)
+			ctx.Step(`^tuple\.([a-zA-Z0-9]+) \* (-?\d+(?:\.\d+)?) = tuple\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.tupleMultipliedScalarEquals)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -84,9 +89,9 @@ func (tt *tupletest) tupleAPlusBEqualsC(varNameA, varNameB, x, y, z, w string) e
 		return nil
 	}
 	return fmt.Errorf("Tuple %v doesn't equal %v", a, tempTuple)
-
 }
-func (tt *tupletest) tupleEqualsTuple(varName, x, y, z, w string) error {
+
+func (tt *tupletest) pointMinusPointEqualsVector(varNameA, varNameB, x, y, z string) error {
 	xF, err := floatOrErr(x)
 	if err != nil {
 		return err
@@ -99,7 +104,81 @@ func (tt *tupletest) tupleEqualsTuple(varName, x, y, z, w string) error {
 	if err != nil {
 		return err
 	}
-	wF, err := floatOrErr(w)
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	b, ok := tt.Tuples[varNameB]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameB)
+	}
+	tempTuple := NewVector(xF, yF, zF)
+	if a.Subtract(b).EqualsTuple(tempTuple) {
+		return nil
+	}
+	return fmt.Errorf("Point %v minus Point %v doesn't equal %v", a, b, tempTuple)
+}
+
+func (tt *tupletest) pointMinusVectorEqualsPoint(varNameA, varNameB, x, y, z string) error {
+	xF, err := floatOrErr(x)
+	if err != nil {
+		return err
+	}
+	yF, err := floatOrErr(y)
+	if err != nil {
+		return err
+	}
+	zF, err := floatOrErr(z)
+	if err != nil {
+		return err
+	}
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	b, ok := tt.Tuples[varNameB]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameB)
+	}
+	tempTuple := NewPoint(xF, yF, zF)
+	if a.Subtract(b).EqualsTuple(tempTuple) {
+		return nil
+	}
+	return fmt.Errorf("Point %v minus Vector %v doesn't equal %v", a, b, tempTuple)
+}
+
+func (tt *tupletest) negativeTupleEquals(varNameA, x, y, z, w string) error {
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	temptuple, err := StringsToTuple(x, y, z, w)
+	if err != nil {
+		return err
+	}
+	if !a.Negative().EqualsTuple(temptuple) {
+		return fmt.Errorf("Negative of %v is %v, which doesn't equal %v", a, a.Negative(), temptuple)
+	}
+	return nil
+}
+
+func (tt *tupletest) tupleMultipliedScalarEquals(varNameA string, scalar float64, x, y, z, w string) error {
+	tempTuple, err := StringsToTuple(x, y, z, w)
+	if err != nil {
+		return err
+	}
+	a, ok := tt.Tuples[varNameA]
+	if !ok {
+		return fmt.Errorf("tuple %s not available", varNameA)
+	}
+	if a.MultiplyScalar(scalar).EqualsTuple(tempTuple) {
+		return nil
+	}
+	return fmt.Errorf("Tuple %v times %f doesn't equal %v", a, scalar, tempTuple)
+}
+
+func (tt *tupletest) tupleEqualsTuple(varName, x, y, z, w string) error {
+	tempTuple, err := StringsToTuple(x, y, z, w)
 	if err != nil {
 		return err
 	}
@@ -107,7 +186,6 @@ func (tt *tupletest) tupleEqualsTuple(varName, x, y, z, w string) error {
 	if !ok {
 		return fmt.Errorf("tuple %snot available", varName)
 	}
-	tempTuple := Tuple{X: xF, Y: yF, Z: zF, W: wF}
 	if a.EqualsTuple(tempTuple) {
 		return nil
 	}
@@ -147,30 +225,31 @@ func (tt *tupletest) aFloatValueEqual(varName, field, xyzw string) error {
 }
 
 func (tt *tupletest) makeATuple(varName string, x, y, z, w string) error {
+	var err error
+	tt.Tuples[varName], err = StringsToTuple(x, y, z, w)
+	return err
+}
+
+func StringsToTuple(x, y, z, w string) (Tuple, error) {
 	xF, err := floatOrErr(x)
 	if err != nil {
-		return err
+		return Tuple{}, err
 	}
 	yF, err := floatOrErr(y)
 	if err != nil {
-		return err
+		return Tuple{}, err
 	}
 	zF, err := floatOrErr(z)
 	if err != nil {
-		return err
+		return Tuple{}, err
 	}
 	wF, err := floatOrErr(w)
 	if err != nil {
-		return err
+		return Tuple{}, err
 	}
-	tt.Tuples[varName] = Tuple{
-		X: xF,
-		Y: yF,
-		Z: zF,
-		W: wF,
-	}
-	return nil
+	return Tuple{xF, yF, zF, wF}, nil
 }
+
 func (tt *tupletest) aIsAPoint(varName string) error {
 	a, ok := tt.Tuples[varName]
 	if !ok {

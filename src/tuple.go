@@ -54,3 +54,30 @@ func (v Tuple) Add(t Tuple) Tuple {
 		v.W + t.W,
 	}
 }
+
+func (v Tuple) Subtract(t Tuple) Tuple {
+	return Tuple{
+		v.X - t.X,
+		v.Y - t.Y,
+		v.Z - t.Z,
+		v.W - t.W,
+	}
+}
+
+func (v Tuple) Negative() Tuple {
+	return Tuple{
+		-1 * v.X,
+		-1 * v.Y,
+		-1 * v.Z,
+		-1 * v.W,
+	}
+}
+
+func (v Tuple) MultiplyScalar(scalar float64) Tuple {
+	return Tuple{
+		v.X * scalar,
+		v.Y * scalar,
+		v.Z * scalar,
+		v.W * scalar,
+	}
+}
