@@ -1,9 +1,15 @@
 package main
 
-import "math"
+import (
+	"math"
+)
 
 type Tuple struct {
 	X, Y, Z, W float64
+}
+
+type Color struct {
+	Red, Green, Blue float64
 }
 
 func NewTuple(x, y, z, w float64) Tuple {
@@ -33,6 +39,13 @@ func NewVector(x, y, z float64) Tuple {
 	}
 }
 
+func NewColor(r, g, b float64) Color {
+	return Color{
+		Red:   r,
+		Green: g,
+		Blue:  b,
+	}
+}
 func (v Tuple) isPoint() bool {
 	return epsilonEquals(v.W, 1.0)
 }
@@ -118,4 +131,51 @@ func (v Tuple) CrossProduct(b Tuple) Tuple {
 	return NewVector(v.Y*b.Z-v.Z*b.Y,
 		v.Z*b.X-v.X*b.Z,
 		v.X*b.Y-v.Y*b.X)
+}
+
+func (v Tuple) ToMatrix() Matrix {
+	M := NewMatrix(4, 1)
+	M.Cells[0][0] = v.X
+	M.Cells[1][0] = v.Y
+	M.Cells[2][0] = v.Z
+	M.Cells[3][0] = v.W
+	return M
+}
+
+func (c1 Color) Equals(c2 Color) bool {
+	return epsilonEquals(c1.Red, c2.Red) &&
+		epsilonEquals(c1.Green, c2.Green) &&
+		epsilonEquals(c1.Blue, c2.Blue)
+}
+
+func (c1 Color) Add(c2 Color) Color {
+	return NewColor(
+		c1.Red+c2.Red,
+		c1.Green+c2.Green,
+		c1.Blue+c2.Blue,
+	)
+}
+
+func (c1 Color) Subtract(c2 Color) Color {
+	return NewColor(
+		c1.Red-c2.Red,
+		c1.Green-c2.Green,
+		c1.Blue-c2.Blue,
+	)
+}
+
+func (c1 Color) MultiplyScalar(scalar float64) Color {
+	return NewColor(
+		c1.Red*scalar,
+		c1.Green*scalar,
+		c1.Blue*scalar,
+	)
+}
+
+func (c1 Color) MultiplyColor(c2 Color) Color {
+	return NewColor(
+		c1.Red*c2.Red,
+		c1.Green*c2.Green,
+		c1.Blue*c2.Blue,
+	)
 }

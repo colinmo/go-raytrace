@@ -101,3 +101,27 @@ Feature: Tuple checks
         And tuple.b ← vector(2, 3, 4)
         Then cross(tuple.a, tuple.b) = vector(-1, 2, -1)
         And cross(tuple.b, tuple.a) = vector(1, -2, 1)
+
+
+
+    Scenario: Colors are (red, green, blue) tuples
+        Given colors.c ← color(-0.5, 0.4, 1.7)
+        Then colors.c.Red = -0.5
+        And colors.c.Green = 0.4
+        And colors.c.Blue = 1.7
+
+    Scenario: Adding colors
+        Given colors.c1 ← color(0.9, 0.6, 0.75)
+        And colors.c2 ← color(0.7, 0.1, 0.25)
+        Then colors.c1 + colors.c2 = color(1.6, 0.7, 1.0)
+    Scenario: Subtracting colors
+        Given colors.c1 ← color(0.9, 0.6, 0.75)
+        And colors.c2 ← color(0.7, 0.1, 0.25)
+        Then colors.c1 - colors.c2 = color(0.2, 0.5, 0.5)
+    Scenario: Multiplying a color by a scalar
+        Given colors.c ← color(0.2, 0.3, 0.4)
+        Then colors.c * 2 = color(0.4, 0.6, 0.8)
+    Scenario: Multiplying colors
+        Given colors.c1 ← color(1, 0.2, 0.4)
+        And colors.c2 ← color(0.9, 1, 0.1)
+        Then colors.c1 * colors.c2 = color(0.9, 0.2, 0.04)

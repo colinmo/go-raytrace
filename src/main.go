@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math"
 )
 
@@ -12,5 +11,6 @@ func epsilonEquals(a, b float64) bool {
 }
 
 func main() {
-	fmt.Printf("hi")
+	//ChapterOne()
+	ChapterTwo()
 }
