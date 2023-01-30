@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"math"
 	"strconv"
 	"strings"
 )
@@ -45,7 +47,65 @@ func BuildMatrixFromString(stringmatrix string) Matrix {
 	return m
 }
 
-var IdentityMatrix = BuildMatrixFromString("|1|0|0|0|\n|0|1|0|0|\n|0|0|1|0|\n|0|0|0|1|")
+var IdentityMatrix = func() Matrix { return BuildMatrixFromString("|1|0|0|0|\n|0|1|0|0|\n|0|0|1|0|\n|0|0|0|1|") }
+
+func NewTranslation(x, y, z float64) Matrix {
+	newT := IdentityMatrix()
+	newT.Cells[0][3] = x
+	newT.Cells[1][3] = y
+	newT.Cells[2][3] = z
+	return newT
+}
+
+func NewScaling(x, y, z float64) Matrix {
+	newT := IdentityMatrix()
+	newT.Cells[0][0] = x
+	newT.Cells[1][1] = y
+	newT.Cells[2][2] = z
+	return newT
+}
+
+func NewRotationX(radians float64) Matrix {
+	newT := IdentityMatrix()
+	newT.Cells[1][1] = math.Cos(radians)
+	newT.Cells[1][2] = -math.Sin(radians)
+	newT.Cells[2][1] = math.Sin(radians)
+	newT.Cells[2][2] = math.Cos(radians)
+	return newT
+}
+
+func NewRotationY(radians float64) Matrix {
+	newT := IdentityMatrix()
+	newT.Cells[0][0] = math.Cos(radians)
+	newT.Cells[2][0] = -math.Sin(radians)
+	newT.Cells[0][2] = math.Sin(radians)
+	newT.Cells[2][2] = math.Cos(radians)
+	return newT
+}
+
+func NewRotationZ(radians float64) Matrix {
+	newT := IdentityMatrix()
+	newT.Cells[0][0] = math.Cos(radians)
+	newT.Cells[0][1] = -math.Sin(radians)
+	newT.Cells[1][0] = math.Sin(radians)
+	newT.Cells[1][1] = math.Cos(radians)
+	return newT
+}
+
+func NewShearing(xy, xz, yx, yz, zx, zy float64) Matrix {
+	newT := IdentityMatrix()
+	newT.Cells[0][1] = xy
+	newT.Cells[0][2] = xz
+	newT.Cells[1][0] = yx
+	newT.Cells[1][2] = yz
+	newT.Cells[2][0] = zx
+	newT.Cells[2][1] = zy
+	return newT
+}
+
+func (m *Matrix) GetRowCell(row, col int) float64 {
+	return m.Cells[row][col]
+}
 
 func (m *Matrix) EqualsMatrix(m2 Matrix) bool {
 	if m.Rows == m2.Rows &&
@@ -85,8 +145,14 @@ func (m *Matrix) MultiplyMatrix(m2 Matrix) Matrix {
 	}
 	return result
 }
-func (m *Matrix) MultiplyTuple(m2 Tuple) Matrix {
-	return m.MultiplyMatrix(m2.ToMatrix())
+func (m *Matrix) MultiplyTuple(m2 Tuple) Tuple {
+	x := m.MultiplyMatrix(m2.ToMatrix())
+	return NewTuple(
+		x.Cells[0][0],
+		x.Cells[1][0],
+		x.Cells[2][0],
+		x.Cells[3][0],
+	)
 }
 
 func (m *Matrix) ToString() string {
@@ -109,4 +175,74 @@ func (m *Matrix) Transpose() Matrix {
 		}
 	}
 	return n
+}
+
+func (m *Matrix) Determinant() float64 {
+	if m.Rows == 2 && m.Cols == 2 {
+		return m.Cells[0][0]*m.Cells[1][1] - m.Cells[0][1]*m.Cells[1][0]
+	}
+	det := 0.0
+	for i := range m.Cells {
+		det = det + m.Cells[0][i]*m.Cofactor(0, i)
+	}
+	return det
+}
+
+func (m *Matrix) Submatrix(subRow, subCol int) Matrix {
+	newRowCount := m.Rows - 1
+	newColCount := m.Cols - 1
+	bob := NewMatrix(newRowCount, newColCount)
+	for i := 0; i < subRow; i++ {
+		bob.Cells[i] = make(map[int]float64)
+		for j := 0; j < subCol; j++ {
+			bob.Cells[i][j] = m.Cells[i][j]
+		}
+		for j := subCol; j < newColCount; j++ {
+			bob.Cells[i][j] = m.Cells[i][j+1]
+		}
+	}
+	for i := subRow; i < newRowCount; i++ {
+		bob.Cells[i] = make(map[int]float64)
+		for j := 0; j < subCol; j++ {
+			bob.Cells[i][j] = m.Cells[i+1][j]
+		}
+		for j := subCol; j < newColCount; j++ {
+			bob.Cells[i][j] = m.Cells[i+1][j+1]
+		}
+	}
+	return bob
+}
+
+func (m *Matrix) Minor(row, col int) float64 {
+	b := m.Submatrix(row, col)
+	return b.Determinant()
+}
+
+func (m *Matrix) Cofactor(row, col int) float64 {
+	b := m.Minor(row, col)
+	if (row+col)%2 == 0 {
+		return b
+	}
+	return -b
+}
+
+func (m *Matrix) Invertable() bool {
+	return m.Determinant() != 0
+}
+
+func (m *Matrix) Inverse() Matrix {
+	if !m.Invertable() {
+		log.Fatal("Cannot invert this matrix")
+	}
+
+	m2 := NewMatrix(m.Rows, m.Cols)
+	determinent := m.Determinant()
+
+	for i := range m.Cells {
+		for j := range m.Cells[i] {
+			c := m.Cofactor(i, j)
+			m2.Cells[j][i] = c / determinent
+		}
+	}
+	return m2
 }

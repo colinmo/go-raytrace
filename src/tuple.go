@@ -1,11 +1,20 @@
 package main
 
 import (
+	"fmt"
 	"math"
 )
 
 type Tuple struct {
 	X, Y, Z, W float64
+}
+
+type Point struct {
+	Tuple
+}
+
+type Vector struct {
+	Tuple
 }
 
 type Color struct {
@@ -140,6 +149,10 @@ func (v Tuple) ToMatrix() Matrix {
 	M.Cells[2][0] = v.Z
 	M.Cells[3][0] = v.W
 	return M
+}
+
+func (v Tuple) ToString() string {
+	return fmt.Sprintf("[%f][%f][%f][%f]", v.X, v.Y, v.Z, v.W)
 }
 
 func (c1 Color) Equals(c2 Color) bool {
