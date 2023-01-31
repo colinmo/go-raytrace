@@ -22,17 +22,19 @@ type rays map[string]Ray
 type slices map[string]map[int]float64
 type shapes map[string]Shaper
 type intersections map[string]Intersection
+type arrayintersections map[string]map[int]Intersection
 
 type tupletest struct {
-	Tuples        tuples
-	Colors        colors
-	Canvases      canvases
-	PPMs          ppms
-	Matrices      matrices
-	Rays          rays
-	Slices        slices
-	Shapes        shapes
-	Intersections intersections
+	Tuples             tuples
+	Colors             colors
+	Canvases           canvases
+	PPMs               ppms
+	Matrices           matrices
+	Rays               rays
+	Slices             slices
+	Shapes             shapes
+	Intersections      intersections
+	ArrayIntersections arrayintersections
 }
 
 func TestFeatures(t *testing.T) {
@@ -50,6 +52,7 @@ func TestFeatures(t *testing.T) {
 				tt.Slices = slices{}
 				tt.Shapes = shapes{}
 				tt.Intersections = intersections{}
+				tt.ArrayIntersections = arrayintersections{}
 				return ctx, nil
 			})
 
@@ -150,6 +153,9 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^ray\.([a-zA-Z0-9_]+)\.origin = tuple.([a-zA-Z0-9_]+)$`, tt.rayroriginOrigin)
 			ctx.Step(`^position\(ray\.([a-zA-Z0-9_]+), (-?\d+(?:\.\d+)?)\) = point\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)$`, tt.positionrayrPoint)
 			ctx.Step(`^ray\.([a-zA-Z0-9_]+) ← ray\(point\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\), vector\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)\)$`, tt.rayrRaypointVector)
+			ctx.Step(`^ray\.([a-zA-Z0-9_]+)\.direction = vector\((-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\)$`, tt.rayrDirectionVector)
+			ctx.Step(`^ray\.([a-zA-Z0-9_]+)\.origin = point\((-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\)$`, tt.rayrOriginPoint)
+			ctx.Step(`^ray\.([a-zA-Z0-9_]+) ← transform\(ray\.([a-zA-Z0-9_]+), matrix.([a-zA-Z0-9_]+)\)$`, tt.rayrTransformrayrM)
 
 			// SHAPES AND INTERSECTIONS
 			ctx.Step(`^slice\.([a-zA-Z0-9_]+)\[(\d+)\] = (-?\d+(?:\.\d+)?)$`, tt.sliceIndexEquals)
@@ -159,7 +165,24 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^intersection\.([a-zA-Z0-9_]+) ← intersection\((-?\d+(?:\.\d+)?), sphere\.([a-zA-Z0-9_]+)\)$`, tt.intersectioniIntersectionSpheres)
 			ctx.Step(`^intersection\.([a-zA-Z0-9_]+)\.object = sphere\.([a-zA-Z0-9_]+)$`, tt.intersectioniobjectSpheres)
 			ctx.Step(`^intersection\.([a-zA-Z0-9_]+)\.t = (-?\d+(?:\.\d+)?)$`, tt.intersectionit)
+			ctx.Step(`^set_transform\(sphere\.([a-zA-Z0-9_]+), matrix\.([a-zA-Z0-9_]+)\)$`, tt.set_transformspheresMatrixt)
+			ctx.Step(`^sphere\.([a-zA-Z0-9_]+)\.transform = identity_matrix$`, tt.spherestransformIdentity_matrix)
+			ctx.Step(`^sphere\.([a-zA-Z0-9_]+)\.transform = matrix\.([a-zA-Z0-9_]+)$`, tt.spherestransformMatrixt)
+			ctx.Step(`^set_transform\(sphere\.([a-zA-Z0-9_]+), scaling\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)\)$`, tt.setTransformspheresScaling)
+			ctx.Step(`^set_transform\(sphere\.([a-zA-Z0-9_]+), translation\((-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?), (-?\d+(?:\.\d+)?)\)\)$`, tt.setTransformspheresTranslation)
+
 			//ctx.Step(`^intersection\.([a-zA-Z0-9_]+) ← hit\(slice\.([a-zA-Z0-9_]+)\)$`, tt.intersectioniHitslicexs)
+
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← intersections\(intersection\.([a-zA-Z0-9_]+), intersection\.([a-zA-Z0-9_]+)\)$`, tt.slicexsIntersectionsintersectioniIntersectioni)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\]\.t = (\d+)$`, tt.slicexsDT)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\.count = (\d+)$`, tt.arrayintersectionsxscount)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← intersect\(sphere\.([a-zA-Z0-9_]+), ray\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsIntersectspheresRayr)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\]\.object = sphere\.([a-zA-Z0-9_]+)$`, tt.arrayintersectionsxsObjectSpheres)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\] = (-?\d+(?:\.\d+)?)$`, tt.arrayintersectionsxs)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← intersections\(intersection\.([a-zA-Z0-9_]+), intersection\.([a-zA-Z0-9_]+), intersection\.([a-zA-Z0-9_]+), intersection\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsIntersectionsintersectioniIntersectioniIntersectioniIntersectioni)
+			ctx.Step(`^intersection\.([a-zA-Z0-9_]+) ← hit\(arrayintersections\.([a-zA-Z0-9_]+)\)$`, tt.intersectioniHitarrayintersectionsxs)
+			ctx.Step(`^intersection\.([a-zA-Z0-9_]+) = intersection\.([a-zA-Z0-9_]+)$`, tt.intersectioniIntersectioni)
+			ctx.Step(`^intersection\.([a-zA-Z0-9_]+) is nothing$`, tt.intersectioniIsNothing)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -1443,7 +1466,7 @@ func (tt *tupletest) slicexsIntersectspheresRayr(varName1, varName2, varName3 st
 		return fmt.Errorf("Ray %s not available", varName3)
 	}
 
-	tt.Slices[varName1] = a.Intersects(b)
+	tt.ArrayIntersections[varName1] = a.Intersects(b)
 	return nil
 }
 
@@ -1483,7 +1506,7 @@ func (tt *tupletest) intersectioniobjectSpheres(varName1, varName2 string) error
 	if a.ObjectEquals(b) {
 		return nil
 	}
-	return fmt.Errorf("Object mismatch for intersection %v|%v", a.Object.(Sphere), b)
+	return fmt.Errorf("Object mismatch for intersection %v|%v", a.Object, b)
 }
 
 func (tt *tupletest) intersectionit(varName1 string, value float64) error {
@@ -1496,4 +1519,237 @@ func (tt *tupletest) intersectionit(varName1 string, value float64) error {
 		return nil
 	}
 	return fmt.Errorf("Big intersect fail")
+}
+func (tt *tupletest) slicexsIntersectionsintersectioniIntersectioni(varName1, varName2, varName3 string) error {
+	b, ok := tt.Intersections[varName2]
+	if !ok {
+		return fmt.Errorf("Sphere %s not available", varName2)
+	}
+	c, ok := tt.Intersections[varName3]
+	if !ok {
+		return fmt.Errorf("Sphere %s not available", varName3)
+	}
+	tt.ArrayIntersections[varName1] = Intersections(b, c)
+	return nil
+}
+
+func (tt *tupletest) slicexsDT(varName1 string, index int, expect float64) error {
+	a, ok := tt.ArrayIntersections[varName1]
+	if !ok {
+		return fmt.Errorf("IntersectionArray %s not available", varName1)
+	}
+	if a[index].T == expect {
+		return nil
+	}
+	return fmt.Errorf("IntersectionArray index %d fail, is %f not %f", index, a[index].T, expect)
+}
+
+func (tt *tupletest) arrayintersectionsxscount(varName1 string, count int) error {
+	a, ok := tt.ArrayIntersections[varName1]
+	if !ok {
+		return fmt.Errorf("IntersectionArray %s not available", varName1)
+	}
+	if len(a) == count {
+		return nil
+	}
+	return fmt.Errorf("Bad count of intersectionarray %s [%d not %d]", varName1, len(a), count)
+}
+
+func (tt *tupletest) arrayintersectionsxsIntersectspheresRayr(varName1, varName2, varName3 string) error {
+	b, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("Sphere %s not available", varName2)
+	}
+	c, ok := tt.Rays[varName3]
+	if !ok {
+		return fmt.Errorf("Sphere %s not available", varName3)
+	}
+	tt.ArrayIntersections[varName1] = b.Intersects(c)
+	return nil
+}
+
+// ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\]\.object = sphere\.([a-zA-Z0-9_]+)$`, tt.arrayintersectionsxsObjectSpheres)
+func (tt *tupletest) arrayintersectionsxsObjectSpheres(varName1 string, index int, varName2 string) error {
+	a, ok := tt.ArrayIntersections[varName1]
+	if !ok {
+		return fmt.Errorf("Sphere2 %s not available", varName1)
+	}
+	b, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("Sphere3 %s not available", varName2)
+	}
+
+	if a[index].Object.Equals(b) {
+		return nil
+	}
+	return fmt.Errorf("Array Intersections %s[%d].Object isn't sphere %s", varName1, index, varName2)
+
+}
+
+// ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\] = (-?\d+(?:\.\d+)?)$`, tt.arrayintersectionsxs)
+func (tt *tupletest) arrayintersectionsxs(varName1 string, index int, value float64) error {
+	a, ok := tt.ArrayIntersections[varName1]
+	if !ok {
+		return fmt.Errorf("AyInters %s not available", varName1)
+	}
+	if a[index].T == value {
+		return nil
+	}
+	return fmt.Errorf("Array intersect fail for %s[%d] - %f rather than %f", varName1, index, a[index].T, value)
+}
+
+func (tt *tupletest) arrayintersectionsxsIntersectionsintersectioniIntersectioniIntersectioniIntersectioni(varName1, varName2, varName3, varName4, varName5 string) error {
+	b, ok := tt.Intersections[varName2]
+	if !ok {
+		return fmt.Errorf("Inters %s not available", varName2)
+	}
+	c, ok := tt.Intersections[varName3]
+	if !ok {
+		return fmt.Errorf("Inters %s not available", varName3)
+	}
+	d, ok := tt.Intersections[varName4]
+	if !ok {
+		return fmt.Errorf("Inters %s not available", varName4)
+	}
+	e, ok := tt.Intersections[varName5]
+	if !ok {
+		return fmt.Errorf("Inters %s not available", varName5)
+	}
+
+	tt.ArrayIntersections[varName1] = Intersections(b, c, d, e)
+	return nil
+}
+
+// ctx.Step(`^intersection\.([a-zA-Z0-9_]+) ← hit\(arrayintersections\.([a-zA-Z0-9_]+)\)$`, tt.intersectioniHitarrayintersectionsxs)
+func (tt *tupletest) intersectioniHitarrayintersectionsxs(varName1, varName2 string) error {
+	b, ok := tt.ArrayIntersections[varName2]
+	if !ok {
+		return fmt.Errorf("AyInters %s not available", varName2)
+	}
+	ok, inter := Hit(b)
+	if ok {
+		tt.Intersections[varName1] = inter
+	}
+	return nil
+}
+
+// ctx.Step(`^intersection\.([a-zA-Z0-9_]+) = intersection\.([a-zA-Z0-9_]+)$`, tt.intersectioniIntersectioni)
+func (tt *tupletest) intersectioniIntersectioni(varName1, varName2 string) error {
+	a, ok := tt.Intersections[varName1]
+	if !ok {
+		return fmt.Errorf("Inters %s not available", varName1)
+	}
+	b, ok := tt.Intersections[varName2]
+	if !ok {
+		return fmt.Errorf("Inters %s not available", varName2)
+	}
+	if a.Equals(b) {
+		return nil
+	}
+	return fmt.Errorf("Inters don't match %v,%v", a, b)
+}
+
+// ctx.Step(`^intersection\.([a-zA-Z0-9_]+) is nothing$`, tt.intersectioniIsNothing)
+func (tt *tupletest) intersectioniIsNothing(varName1 string) error {
+	_, ok := tt.Intersections[varName1]
+	if ok {
+		return fmt.Errorf("Inters %s should not be available", varName1)
+	}
+	return nil
+}
+
+func (tt *tupletest) rayrDirectionVector(varName1 string, x, y, z float64) error {
+	a, ok := tt.Rays[varName1]
+	if !ok {
+		return fmt.Errorf("Ray %s not available", varName1)
+	}
+	if a.Direction.EqualsTuple(NewVector(x, y, z)) {
+		return nil
+	}
+	return fmt.Errorf("ray direction %s is not %s", a.Direction.ToString(), NewVector(x, y, z).ToString())
+}
+
+func (tt *tupletest) rayrOriginPoint(varName1 string, x, y, z float64) error {
+	a, ok := tt.Rays[varName1]
+	if !ok {
+		return fmt.Errorf("Ray %s not available", varName1)
+	}
+	if a.Origin.EqualsTuple(NewPoint(x, y, z)) {
+		return nil
+	}
+	return fmt.Errorf("ray direction %s is not %s", a.Direction.ToString(), NewPoint(x, y, z).ToString())
+}
+
+func (tt *tupletest) rayrTransformrayrM(varName1, varName2, varName3 string) error {
+	b, ok := tt.Rays[varName2]
+	if !ok {
+		return fmt.Errorf("Ray %s not available", varName2)
+	}
+	c, ok := tt.Matrices[varName3]
+	if !ok {
+		return fmt.Errorf("Matrix %s not available", varName3)
+	}
+
+	tt.Rays[varName1] = b.Transform(c)
+	return nil
+}
+
+func (tt *tupletest) set_transformspheresMatrixt(varName1, varName2 string) error {
+	a, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Shape %s not available", varName1)
+	}
+	b, ok := tt.Matrices[varName2]
+	if !ok {
+		return fmt.Errorf("Matrix %s not available", varName2)
+	}
+
+	a.SetTransform(b)
+	return nil
+}
+
+func (tt *tupletest) spherestransformIdentity_matrix(varName1 string) error {
+	a, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Shape %s not available", varName1)
+	}
+	jeff := a.GetTransform()
+	if jeff.EqualsMatrix(IdentityMatrix()) {
+		return nil
+	}
+	return fmt.Errorf("Sphere transform not identity")
+}
+
+func (tt *tupletest) spherestransformMatrixt(varName1, varName2 string) error {
+	a, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Shape %s not available", varName1)
+	}
+	b, ok := tt.Matrices[varName2]
+	if !ok {
+		return fmt.Errorf("Matrix %s not available", varName2)
+	}
+	jeff := a.GetTransform()
+	if jeff.EqualsMatrix(b) {
+		return nil
+	}
+	return fmt.Errorf("Sphere transform not %v", b)
+}
+
+func (tt *tupletest) setTransformspheresScaling(varName1 string, x, y, z float64) error {
+	_, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Shape %s not available", varName1)
+	}
+	tt.Shapes[varName1].SetTransform(NewScaling(x, y, z))
+	return nil
+}
+
+func (tt *tupletest) setTransformspheresTranslation(varName1 string, x, y, z float64) error {
+	_, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Shape %s not available", varName1)
+	}
+	tt.Shapes[varName1].SetTransform(NewTranslation(x, y, z))
+	return nil
 }

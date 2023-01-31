@@ -12,6 +12,7 @@ func epsilonEquals(a, b float64) bool {
 
 func main() {
 	//ChapterOne()
-	// ChapterTwo()
-	ChapterThree()
+	//ChapterTwo()
+	//ChapterThree()
+	ChapterFour()
 }

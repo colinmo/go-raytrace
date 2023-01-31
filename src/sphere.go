@@ -7,53 +7,52 @@ import (
 )
 
 type Sphere struct {
-	ID     int
-	Origin Tuple
-	Radius float64
+	ID        int
+	Origin    Tuple
+	Radius    float64
+	Transform Matrix
 }
 
-func NewSphere() Sphere {
+func NewSphere() *Sphere {
 	rand.Seed(time.Now().UnixNano())
-	x := Sphere{
-		ID: rand.Intn(100000),
+	return &Sphere{
+		ID:        rand.Intn(100000),
+		Transform: IdentityMatrix(),
+		Origin:    NewPoint(0, 0, 0),
 	}
-	return x
 }
 
-func (s *Sphere) Discriminant(r Ray) map[int]float64 {
-	sphereToRay := r.Origin.Subtract(NewPoint(0, 0, 0))
-	a := r.Direction.DotProduct(sphereToRay)
-	b := 2 * r.Direction.DotProduct(sphereToRay)
+func (s *Sphere) GetID() int {
+	return s.ID
+}
+
+func (s *Sphere) Intersects(r Ray) map[int]Intersection {
+	r2 := r.Transform(s.Transform.Inverse())
+
+	sphereToRay := r2.Origin.Subtract(NewPoint(0, 0, 0))
+	a := r2.Direction.DotProduct(r2.Direction)
+	b := r2.Direction.DotProduct(sphereToRay) * 2
 	c := sphereToRay.DotProduct(sphereToRay) - 1
 
 	discriminant := b*b - 4*a*c
 
 	if discriminant < 0 {
-		return map[int]float64{}
+		return Intersections()
 	}
 	t1 := (-b - math.Sqrt(discriminant)) / (2 * a)
 	t2 := (-b + math.Sqrt(discriminant)) / (2 * a)
 
-	return map[int]float64{0: t1, 1: t2}
+	return map[int]Intersection{0: NewIntersection(t1, s), 1: NewIntersection(t2, s)}
 }
 
-func (s Sphere) Intersects(r Ray) map[int]float64 {
-	switch {
-	case r.Origin.EqualsTuple(NewPoint(0, 0, -5)) && r.Direction.EqualsTuple(NewVector(0, 0, 1)):
-		return map[int]float64{0: 4.0, 1: 6.0}
-	case r.Origin.EqualsTuple(NewPoint(0, 1, -5)) && r.Direction.EqualsTuple(NewVector(0, 0, 1)):
-		return map[int]float64{0: 5.0, 1: 5.0}
-	case r.Origin.EqualsTuple(NewPoint(0, 2, -5)) && r.Direction.EqualsTuple(NewVector(0, 0, 1)):
-		return map[int]float64{}
-	case r.Origin.EqualsTuple(NewPoint(0, 0, 0)) && r.Direction.EqualsTuple(NewVector(0, 0, 1)):
-		return map[int]float64{0: -1.0, 1: 1.0}
-	case r.Origin.EqualsTuple(NewPoint(0, 0, 5)) && r.Direction.EqualsTuple(NewVector(0, 0, 1)):
-		return map[int]float64{0: -6.0, 1: -4.0}
-	}
-	return map[int]float64{}
+func (s *Sphere) Equals(t Shaper) bool {
+	return s.ID == t.GetID()
 }
 
-func (s Sphere) Equals(t interface{}) bool {
-	t2 := t.(Sphere)
-	return s.Origin.EqualsTuple(t2.Origin) && s.Radius == t2.Radius
+func (s *Sphere) SetTransform(t Matrix) {
+	s.Transform = t
+}
+
+func (s *Sphere) GetTransform() Matrix {
+	return s.Transform
 }

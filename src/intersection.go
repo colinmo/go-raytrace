@@ -1,31 +1,43 @@
 package main
 
-import "log"
+import (
+	"math"
+)
 
 type Intersection struct {
 	T      float64
-	Object interface{}
+	Object Shaper
 }
 
-func NewIntersection(t float64, shape interface{}) Intersection {
-	ok := false
-	switch shape.(type) {
-	case Sphere:
-		ok = true
-	}
-	if ok {
-		return Intersection{T: t, Object: shape}
-	}
-	log.Fatalf("Wrong shape type")
-	return Intersection{}
+func NewIntersection(t float64, shape Shaper) Intersection {
+	return Intersection{T: t, Object: shape}
 }
 
-func (i *Intersection) ObjectEquals(target interface{}) bool {
-	switch i.Object.(type) {
-	case Sphere:
-		s := i.Object.(Sphere)
-		t := target.(Sphere)
-		return s.Equals(t)
+func (i *Intersection) ObjectEquals(target Shaper) bool {
+	return i.Object.GetID() == target.GetID()
+}
+
+func (i *Intersection) Equals(i2 Intersection) bool {
+	return i.T == i2.T && i.Object.GetID() == i2.Object.GetID()
+}
+
+func Intersections(x ...Intersection) map[int]Intersection {
+	z := map[int]Intersection{}
+	for i, y := range x {
+		z[i] = y
 	}
-	return false
+	return z
+
+}
+
+func Hit(inters map[int]Intersection) (bool, Intersection) {
+	var hit = Intersection{T: math.Inf(1)}
+	var set = false
+	for _, y := range inters {
+		if y.T > 0 && y.T < hit.T {
+			hit = y
+			set = true
+		}
+	}
+	return set, hit
 }

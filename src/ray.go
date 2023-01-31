@@ -20,3 +20,7 @@ func NewRay(origin Tuple, direction Tuple) Ray {
 func (r *Ray) Position(t float64) Tuple {
 	return r.Origin.Add(r.Direction.MultiplyScalar(t))
 }
+
+func (r Ray) Transform(m Matrix) Ray {
+	return NewRay(m.MultiplyTuple(r.Origin), m.MultiplyTuple(r.Direction))
+}
