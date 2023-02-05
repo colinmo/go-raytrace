@@ -273,6 +273,33 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^camera\.([a-zA-Z0-9_]+)\.transform ← view_transform\(tuple\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+)\)$`, tt.cameractransformView_transformtuplefromTupletoTupleup)
 			ctx.Step(`^canvas\.([a-zA-Z0-9_]+) ← render\(camera\.([a-zA-Z0-9_]+), world\.([a-zA-Z0-9_]+)\)$`, tt.canvasimageRendercameracWorldw)
 			ctx.Step(`^pixel_at\(canvas\.([a-zA-Z0-9_]+), (\d+), (\d+)\) = color\((.*), (.*), (.*)\)$`, tt.pixel_atcanvasimageColor)
+
+			// CHAPTER 8
+
+			ctx.Step(`^colors\.([a-zA-Z0-9_]+) ← lighting\(material\.([a-zA-Z0-9_]+), light\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+), true\)$`, tt.colorsresultLightingmaterialmLightlightTuplepositionTupleeyevTuplenormalvTrue)
+			ctx.Step(`^is_shadowed\(world\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+)\) is (true|false)$`, tt.is_shadowedworldwTuplepIsFalse)
+			ctx.Step(`^sphere\.([a-zA-Z0-9_]+) is added to world\.([a-zA-Z0-9_]+)$`, tt.spheresIsAddedToWorldw)
+			ctx.Step(`^computes\.([a-zA-Z0-9_]+)\.over_point\.z < -EPSILON\/2$`, tt.computescompsover_pointzEPSILON)
+			ctx.Step(`^computes\.([a-zA-Z0-9_]+)\.point\.z > computes\.([a-zA-Z0-9_]+)\.over_point\.z$`, tt.computescompspointzComputescompsover_pointz)
+
+			// CHAPTER 9
+
+			ctx.Step(`^set_transform\(shapes\.([a-zA-Z0-9_]+), translation\((\d+), (\d+), (\d+)\)\)$`, tt.set_transformshapessTranslation)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← test_shape\(\)$`, tt.shapessTest_shape)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.transform = identity_matrix$`, tt.shapesstransformIdentity_matrix)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.transform = translation\((.+), (.+), (.+)\)$`, tt.shapesstransformTranslation)
+
+			ctx.Step(`^material\.([a-zA-Z0-9_]+) ← shapes\.([a-zA-Z0-9_]+)\.material$`, tt.materialmShapessmaterial)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.material ← material\.([a-zA-Z0-9_]+)$`, tt.shapessmaterialMaterialmAssign)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.material = material\.([a-zA-Z0-9_]+)$`, tt.shapessmaterialMaterialmEqual)
+
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← intersect\(shapes\.([a-zA-Z0-9_]+), ray\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsIntersectshapessRayr)
+			ctx.Step(`^set_transform\(shapes\.([a-zA-Z0-9_]+), scaling\((.+), (.+), (.+)\)\)$`, tt.set_transformshapessScaling)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.saved_ray\.direction = vector\((.+), (.+), (.+)\)$`, tt.shapesssaved_raydirectionVector)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.saved_ray\.origin = point\((.+), (.+), (.+)\)$`, tt.shapesssaved_rayoriginPoint)
+
+			ctx.Step(`^set_transform\(shapes\.([a-zA-Z0-9_]+), matrix\.([a-zA-Z0-9_]+)\)$`, tt.set_transformshapessMatrixm)
+			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← normal_at\(shapes\.([a-zA-Z0-9_]+), point\((.*), (.*), (.*)\)\)$`, tt.tuplenNormal_atshapessPoint)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -2173,7 +2200,8 @@ func (tt *tupletest) colorsresultLightingmaterialmLightlightTuplepositionTupleey
 	if !ok {
 		return fmt.Errorf("NormalVector not avail")
 	}
-	tt.Colors[varName1] = Lighting(material, light, position, eyev, normalv)
+	inShadow := false
+	tt.Colors[varName1] = Lighting(material, light, position, eyev, normalv, inShadow)
 	return nil
 }
 func (tt *tupletest) lightlightPoint_lightpointColor(varName1, x, y, z, r, g, b string) error {
@@ -2230,6 +2258,13 @@ func (tt *tupletest) spheresSphereWith(varName1 string, tablevalue *godog.Table)
 					StringToFloat(strings.Trim(vals[0], " ")),
 					StringToFloat(strings.Trim(vals[1], " ")),
 					StringToFloat(strings.Trim(vals[2], " ")))
+			case "translation":
+				vals := strings.Split(strings.Trim(bob[1], ")"), ",")
+				sph.Transform = NewTranslation(
+					StringToFloat(strings.Trim(vals[0], " ")),
+					StringToFloat(strings.Trim(vals[1], " ")),
+					StringToFloat(strings.Trim(vals[2], " ")))
+
 			}
 		}
 	}
@@ -2597,4 +2632,250 @@ func (tt *tupletest) pixel_atcanvasimageColor(varName1 string, x, y int64, r, g,
 	}
 	return fmt.Errorf("Pixel off %d,%d | %f,%f,%f", x, y, StringToFloat(r), StringToFloat(g), StringToFloat(b))
 
+}
+
+func (tt *tupletest) colorsresultLightingmaterialmLightlightTuplepositionTupleeyevTuplenormalvTrue(varName1, mName, lName, pName, eName, nName string) error {
+	m, ok := tt.Materials[mName]
+	if !ok {
+		return fmt.Errorf("Canvases %s not available", mName)
+	}
+
+	l, ok := tt.Lights[lName]
+	if !ok {
+		return fmt.Errorf("Canvases %s not available", lName)
+	}
+
+	p, ok := tt.Tuples[pName]
+	if !ok {
+		return fmt.Errorf("Canvases %s not available", pName)
+	}
+
+	e, ok := tt.Tuples[eName]
+	if !ok {
+		return fmt.Errorf("Canvases %s not available", eName)
+	}
+
+	n, ok := tt.Tuples[nName]
+	if !ok {
+		return fmt.Errorf("Canvases %s not available", nName)
+	}
+
+	tt.Colors[varName1] = Lighting(m, l, p, e, n, true)
+	return nil
+}
+
+func (tt *tupletest) is_shadowedworldwTuplepIsFalse(varName1, varName2, truefalse string) error {
+	w, ok := tt.Worlds[varName1]
+	if !ok {
+		return fmt.Errorf("World %s not available", varName1)
+	}
+
+	t, ok := tt.Tuples[varName2]
+	if !ok {
+		return fmt.Errorf("Tuple %s not available", varName2)
+	}
+
+	tf := true
+	if truefalse == "false" {
+		tf = false
+	}
+
+	if w.IsShadowed(t) && tf {
+		return nil
+	}
+	if !w.IsShadowed(t) && !tf {
+		return nil
+	}
+	return fmt.Errorf("False/true bad")
+
+}
+
+func (tt *tupletest) spheresIsAddedToWorldw(varName1, varName2 string) error {
+
+	s, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Shapes %s not available", varName1)
+	}
+	w, ok := tt.Worlds[varName2]
+	if !ok {
+		return fmt.Errorf("World %s not available", varName2)
+	}
+
+	w.Objects = append(tt.Worlds[varName2].Objects, s)
+	tt.Worlds[varName2] = w
+	return nil
+
+}
+
+func (tt *tupletest) computescompsover_pointzEPSILON(varName1 string) error {
+	c, ok := tt.Computations[varName1]
+	if !ok {
+		return fmt.Errorf("Computation %s not available", varName1)
+	}
+
+	//a := tt.Intersections["i"]
+	//b := tt.Rays["r"]
+	//d := tt.Shapes["shape"]
+	//log.Fatalf("\nInt: %v\nRay: %v\nShape: %v\nComp: %v\n\n%v", a, b, d, c, tt.Shapes)
+	if c.OverPoint.Z < -epsilon/2 {
+		return nil
+	}
+	return fmt.Errorf("Overpoint nerts %f|%f", c.OverPoint.Z, -epsilon/2)
+}
+func (tt *tupletest) computescompspointzComputescompsover_pointz(varName1, varName2 string) error {
+
+	c1, ok := tt.Computations[varName1]
+	if !ok {
+		return fmt.Errorf("Computation %s not available", varName1)
+	}
+
+	c2, ok := tt.Computations[varName2]
+	if !ok {
+		return fmt.Errorf("Computation %s not available", varName2)
+	}
+
+	if c1.Point.Z > c2.OverPoint.Z {
+		return nil
+	}
+	return fmt.Errorf("OverPoitn mismatch")
+}
+
+func (tt *tupletest) set_transformshapessTranslation(varName1, x, y, z string) error {
+	_, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Computation %s not available", varName1)
+	}
+
+	tt.Shapes[varName1].SetTransform(NewTranslation(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
+	return nil
+}
+func (tt *tupletest) shapessTest_shape(varName1 string) error {
+	tt.Shapes[varName1] = NewTestShape()
+	return nil
+}
+func (tt *tupletest) shapesstransformIdentity_matrix(varName1 string) error {
+	t, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Computation %s not available", varName1)
+	}
+
+	x := t.GetTransform()
+	if x.EqualsMatrix(IdentityMatrix()) {
+		return nil
+	}
+	return fmt.Errorf("Nope")
+}
+func (tt *tupletest) shapesstransformTranslation(varName1, x, y, z string) error {
+	t, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Computation %s not available", varName1)
+	}
+
+	x2 := t.GetTransform()
+	if x2.EqualsMatrix(NewTranslation(StringToFloat(x), StringToFloat(y), StringToFloat(z))) {
+		return nil
+	}
+	return fmt.Errorf("Bad trans \n%v\n%v", x2, NewTranslation(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
+}
+
+func (tt *tupletest) materialmShapessmaterial(varName1, varName2 string) error {
+	s, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("Shape %s not available", varName2)
+	}
+	tt.Materials[varName1] = s.GetMaterial()
+	return nil
+}
+func (tt *tupletest) shapessmaterialMaterialmAssign(varName1, varName2 string) error {
+	m, ok := tt.Materials[varName2]
+	if !ok {
+		return fmt.Errorf("Materials %s not available", varName2)
+	}
+
+	tt.Shapes[varName1].SetMaterial(m)
+	return nil
+}
+func (tt *tupletest) shapessmaterialMaterialmEqual(varName1, varName2 string) error {
+	s, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Sha %s not available", varName1)
+	}
+	m, ok := tt.Materials[varName2]
+	if !ok {
+		return fmt.Errorf("Mat %s not available", varName2)
+	}
+
+	if s.GetMaterial().Equals(m) {
+		return nil
+	}
+	return fmt.Errorf("Material mismatch")
+}
+
+func (tt *tupletest) arrayintersectionsxsIntersectshapessRayr(varName1, varName2, varName3 string) error {
+	s, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("Sha %s not available", varName2)
+	}
+	r, ok := tt.Rays[varName3]
+	if !ok {
+		return fmt.Errorf("Ray %s not available", varName3)
+	}
+
+	tt.ArrayIntersections[varName1] = s.Intersects(r)
+	return nil
+}
+func (tt *tupletest) set_transformshapessScaling(varName1, x, y, z string) error {
+	s, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Sha %s not available", varName1)
+	}
+	s.SetTransform(NewScaling(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
+	tt.Shapes[varName1] = s
+	return nil
+}
+func (tt *tupletest) shapesssaved_raydirectionVector(varName1, x, y, z string) error {
+	s, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Sha %s not available", varName1)
+	}
+	if s.GetSavedRay().Direction.EqualsTuple(NewVector(StringToFloat(x), StringToFloat(y), StringToFloat(z))) {
+		return nil
+	}
+	return fmt.Errorf("Saved ray fail2")
+}
+func (tt *tupletest) shapesssaved_rayoriginPoint(varName1, x, y, z string) error {
+	s, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Sha %s not available", varName1)
+	}
+	if s.GetSavedRay().Origin.EqualsTuple(NewPoint(StringToFloat(x), StringToFloat(y), StringToFloat(z))) {
+		return nil
+	}
+	return fmt.Errorf("Saved ray fail %v", s.GetSavedRay())
+}
+
+func (tt *tupletest) set_transformshapessMatrixm(varName1, varName2 string) error {
+
+	s, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("Sha %s not available", varName1)
+	}
+
+	m, ok := tt.Matrices[varName2]
+	if !ok {
+		return fmt.Errorf("MA %s not available", varName2)
+	}
+	s.SetTransform(m)
+	tt.Shapes[varName1] = s
+	return nil
+}
+
+func (tt *tupletest) tuplenNormal_atshapessPoint(varName1, varName2, x, y, z string) error {
+	s, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("Sha %s not available", varName2)
+	}
+
+	tt.Tuples[varName1] = s.NormalAt(NewPoint(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
+	return nil
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"math"
 )
 
@@ -43,12 +44,13 @@ func Hit(inters map[int]Intersection) (bool, Intersection) {
 }
 
 type Computations struct {
-	T       float64
-	Object  Shaper
-	Point   Tuple
-	Eyev    Tuple
-	Normalv Tuple
-	Inside  bool
+	T         float64
+	Object    Shaper
+	Point     Tuple
+	Eyev      Tuple
+	Normalv   Tuple
+	OverPoint Tuple
+	Inside    bool
 }
 
 func (i *Intersection) PrepareComputations(r Ray) Computations {
@@ -65,5 +67,9 @@ func (i *Intersection) PrepareComputations(r Ray) Computations {
 	} else {
 		comps.Inside = false
 	}
+	if math.IsNaN(comps.OverPoint.X) {
+		log.Fatalf("OP: %v|%v|%v|%f", comps.OverPoint, comps.Point, comps.Normalv, epsilon)
+	}
+	comps.OverPoint = comps.Point.Add(comps.Normalv.MultiplyScalar(epsilon))
 	return comps
 }

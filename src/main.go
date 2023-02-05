@@ -14,7 +14,9 @@ func main() {
 	//ChapterOne()
 	//ChapterTwo()
 	//ChapterThree()
-	ChapterFive()
-	ChapterSix()
+	//ChapterFive()
+	//ChapterSix()
 	//ChapterSeven()
+	//ChapterEight()
+	ChapterNine()
 }

@@ -38,7 +38,8 @@ func ChapterSix() {
 				point := r.Position(hitInter.T)
 				normal := hitInter.Object.NormalAt(point)
 				eye := r.Direction.Negative()
-				color = Lighting(hitInter.Object.GetMaterial(), light, point, eye, normal)
+				inShadow := false
+				color = Lighting(hitInter.Object.GetMaterial(), light, point, eye, normal, inShadow)
 				canvas.WritePixel(int(x), int(y), color)
 			}
 		}

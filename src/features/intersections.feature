@@ -89,3 +89,11 @@ Feature: Intersections
         When computes.comps ← prepare_computations(intersection.i, ray.r)
         And colors.c ← shade_hit(world.w, computes.comps)
         Then colors.c = color(0.90498, 0.90498, 0.90498)
+    Scenario: The hit should offset the point
+        Given ray.r ← ray(point(0, 0, -5), vector(0, 0, 1))
+        And sphere.shape ← sphere() with:
+            | transform | translation(0, 0, 1) |
+        And intersection.i ← intersection(5, sphere.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        Then computes.comps.over_point.z < -EPSILON/2
+        And computes.comps.point.z > computes.comps.over_point.z

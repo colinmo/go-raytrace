@@ -68,12 +68,14 @@ func (w *World) Intersect(r Ray) map[int]Intersection {
 }
 
 func (w *World) ShadeHit(comps Computations) Color {
+	inShadow := w.IsShadowed(comps.OverPoint)
 	return Lighting(
 		comps.Object.GetMaterial(),
 		w.GetLight(),
 		comps.Point,
 		comps.Eyev,
-		comps.Normalv)
+		comps.Normalv,
+		inShadow)
 }
 
 func (w *World) ColorAt(r Ray) Color {
@@ -84,4 +86,19 @@ func (w *World) ColorAt(r Ray) Color {
 	}
 	comps := is.PrepareComputations(r)
 	return w.ShadeHit(comps)
+}
+
+func (w *World) IsShadowed(p Tuple) bool {
+	v := w.Lights[0].Position.Subtract(p)
+	distance := v.Magnitude()
+	direction := v.Normalize()
+
+	r := NewRay(p, direction)
+	intersections := w.Intersect(r)
+
+	ishit, h := Hit(intersections)
+	if ishit && h.T < distance {
+		return true
+	}
+	return false
 }

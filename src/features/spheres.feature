@@ -46,9 +46,6 @@ Feature: Spheres
         And arrayintersections.xs[0].object = sphere.s
         And arrayintersections.xs[1].object = sphere.s
 
-    Scenario: A sphere's default transformation
-        Given sphere.s ← sphere()
-        Then sphere.s.transform = identity_matrix
     Scenario: Changing a sphere's transformation
         Given sphere.s ← sphere()
         And matrix.t ← translation(2, 3, 4)
@@ -99,10 +96,6 @@ Feature: Spheres
         And set_transform(sphere.s, matrix.m)
         When matrix.n ← normal_at(sphere.s, point(0, √2/2, -√2/2))
         Then matrix.n = vector(0, 0.97014, -0.24254)
-    Scenario: A sphere has a default material
-        Given sphere.s ← sphere()
-        When material.m ← sphere.s.material
-        Then material.m = material()
     Scenario: A sphere may be assigned a material
         Given sphere.s ← sphere()
         And material.m ← material()

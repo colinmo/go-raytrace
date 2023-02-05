@@ -44,3 +44,9 @@ Feature: Materials
         And light.light ← point_light(point(0, 0, 10), color(1, 1, 1))
         When colors.result ← lighting(material.m, light.light, tuple.position, tuple.eyev, tuple.normalv)
         Then colors.result = color(0.1, 0.1, 0.1)
+    Scenario: Lighting with the surface in shadow
+        Given tuple.eyev ← vector(0, 0, -1)
+        And tuple.normalv ← vector(0, 0, -1)
+        And light.light ← point_light(point(0, 0, -10), color(1, 1, 1))
+        When colors.result ← lighting(material.m, light.light, tuple.position, tuple.eyev, tuple.normalv, true)
+        Then colors.result = color(0.1, 0.1, 0.1)

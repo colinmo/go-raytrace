@@ -18,7 +18,7 @@ func (l Light) Transform(m Matrix) Light {
 	return NewLight(m.MultiplyTuple(l.Position), l.Intensity)
 }
 
-func Lighting(material Material, light Light, point Tuple, eyev Tuple, normalv Tuple) Color {
+func Lighting(material Material, light Light, point Tuple, eyev Tuple, normalv Tuple, inShadow bool) Color {
 	effectiveColor := material.Color.MultiplyColor(light.Intensity)
 	lightV := light.Position.Subtract(point).Normalize()
 	ambient := effectiveColor.MultiplyScalar(material.Ambient)
@@ -27,6 +27,9 @@ func Lighting(material Material, light Light, point Tuple, eyev Tuple, normalv T
 	var specular Color
 
 	lightDotNormal := lightV.DotProduct(normalv)
+	if inShadow {
+		return ambient
+	}
 	if lightDotNormal < 0 {
 		diffuse = black
 		specular = black
