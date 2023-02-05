@@ -101,3 +101,31 @@ Feature: Transformation checks
         And matrix.C ← translation(10, 5, 7)
         When matrix.T ← matrix.C * matrix.B * matrix.A
         Then matrix.T * tuple.p = point(15, 0, 7)
+    Scenario: The transformation matrix for the default orientation
+        Given tuple.from ← point(0, 0, 0)
+        And tuple.to ← point(0, 0, -1)
+        And tuple.up ← vector(0, 1, 0)
+        When matrix.t ← view_transform(tuple.from, tuple.to, tuple.up)
+        Then matrix.t = identity_matrix
+    Scenario: A view transformation matrix looking in positive z direction
+        Given tuple.from ← point(0, 0, 0)
+        And tuple.to ← point(0, 0, 1)
+        And tuple.up ← vector(0, 1, 0)
+        When matrix.t ← view_transform(tuple.from, tuple.to, tuple.up)
+        Then matrix.t = scaling(-1, 1, -1)
+    Scenario: The view transformation moves the world
+        Given tuple.from ← point(0, 0, 8)
+        And tuple.to ← point(0, 0, 0)
+        And tuple.up ← vector(0, 1, 0)
+        When matrix.t ← view_transform(tuple.from, tuple.to, tuple.up)
+        Then matrix.t = translation(0, 0, -8)
+    Scenario: An arbitrary view transformation
+        Given tuple.from ← point(1, 3, 2)
+        And tuple.to ← point(4, -2, 8)
+        And tuple.up ← vector(1, 1, 0)
+        When matrix.t ← view_transform(tuple.from, tuple.to, tuple.up)
+        Then matrix.t is the following 4x4 matrix:
+            | -0.50709 | 0.50709 | 0.67612  | -2.36643 |
+            | 0.76772  | 0.60609 | 0.12122  | -2.82843 |
+            | -0.35857 | 0.59761 | -0.71714 | 0.00000  |
+            | 0.00000  | 0.00000 | 0.00000  | 1.00000  |

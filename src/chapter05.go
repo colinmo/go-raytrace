@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-func ChapterFour() {
+func ChapterFive() {
 	rayOrigin := NewPoint(0, 0, -5)
 	wallZ := 10.0
 	wallSize := 7.0
@@ -34,7 +34,7 @@ func ChapterFour() {
 		}
 	}
 
-	tempFile := filepath.Join(os.TempDir(), "chapter04.ppm")
+	tempFile := filepath.Join(os.TempDir(), "chapter05.ppm")
 	os.WriteFile(tempFile, []byte(canvas.ToPPM()), 0666)
 	fmt.Printf("Open %s\n", tempFile)
 }

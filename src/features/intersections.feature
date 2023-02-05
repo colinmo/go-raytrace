@@ -46,3 +46,46 @@ Feature: Intersections
         And arrayintersections.xs ← intersections(intersection.i1, intersection.i2, intersection.i3, intersection.i4)
         When intersection.i ← hit(arrayintersections.xs)
         Then intersection.i = intersection.i4
+    Scenario: Precomputing the state of an intersection
+        Given ray.r ← ray(point(0, 0, -5), vector(0, 0, 1))
+        And sphere.shape ← sphere()
+        And intersection.i ← intersection(4, sphere.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        Then computes.comps.t = intersection.i.t
+        And computes.comps.object = intersection.i.object
+        And computes.comps.point = point(0, 0, -1)
+        And computes.comps.eyev = vector(0, 0, -1)
+        And computes.comps.normalv = vector(0, 0, -1)
+    Scenario: The hit, when an intersection occurs on the outside
+        Given ray.r ← ray(point(0, 0, -5), vector(0, 0, 1))
+        And sphere.shape ← sphere()
+        And intersection.i ← intersection(4, sphere.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        Then computes.comps.inside = false
+    Scenario: The hit, when an intersection occurs on the inside
+        Given ray.r ← ray(point(0, 0, 0), vector(0, 0, 1))
+        And sphere.shape ← sphere()
+        And intersection.i ← intersection(1, sphere.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        Then computes.comps.point = point(0, 0, 1)
+        And computes.comps.eyev = vector(0, 0, -1)
+        And computes.comps.inside = true
+        # normal would have been (0, 0, 1), but is inverted!
+        And computes.comps.normalv = vector(0, 0, -1)
+    Scenario: Shading an intersection
+        Given world.w ← default_world()
+        And ray.r ← ray(point(0, 0, -5), vector(0, 0, 1))
+        And sphere.shape ← the first object in world.w
+        And intersection.i ← intersection(4, sphere.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        And colors.c ← shade_hit(world.w, computes.comps)
+        Then colors.c = color(0.38066, 0.47583, 0.2855)
+    Scenario: Shading an intersection from the inside
+        Given world.w ← default_world()
+        And world.w.light ← point_light(point(0, 0.25, 0), color(1, 1, 1))
+        And ray.r ← ray(point(0, 0, 0), vector(0, 0, 1))
+        And sphere.shape ← the second object in world.w
+        And intersection.i ← intersection(0.5, sphere.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        And colors.c ← shade_hit(world.w, computes.comps)
+        Then colors.c = color(0.90498, 0.90498, 0.90498)

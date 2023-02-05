@@ -41,3 +41,29 @@ func Hit(inters map[int]Intersection) (bool, Intersection) {
 	}
 	return set, hit
 }
+
+type Computations struct {
+	T       float64
+	Object  Shaper
+	Point   Tuple
+	Eyev    Tuple
+	Normalv Tuple
+	Inside  bool
+}
+
+func (i *Intersection) PrepareComputations(r Ray) Computations {
+	comps := Computations{
+		T:      i.T,
+		Object: i.Object,
+	}
+	comps.Point = r.Position(comps.T)
+	comps.Eyev = r.Direction.Negative()
+	comps.Normalv = comps.Object.NormalAt(comps.Point)
+	if comps.Normalv.DotProduct(comps.Eyev) < 0 {
+		comps.Inside = true
+		comps.Normalv = comps.Normalv.Negative()
+	} else {
+		comps.Inside = false
+	}
+	return comps
+}

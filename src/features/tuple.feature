@@ -125,3 +125,14 @@ Feature: Tuple checks
         Given colors.c1 ← color(1, 0.2, 0.4)
         And colors.c2 ← color(0.9, 1, 0.1)
         Then colors.c1 * colors.c2 = color(0.9, 0.2, 0.04)
+
+    Scenario: Reflecting a vector approaching at 45°
+        Given tuple.v ← vector(1, -1, 0)
+        And tuple.n ← vector(0, 1, 0)
+        When tuple.r ← reflect(v, n)
+        Then tuple.r = vector(1, 1, 0)
+    Scenario: Reflecting a vector off a slanted surface
+        Given tuple.v ← vector(0, -1, 0)
+        And tuple.n ← vector(√2/2, √2/2, 0)
+        When tuple.r ← reflect(v, n)
+        Then tuple.r = vector(1, 0, 0)

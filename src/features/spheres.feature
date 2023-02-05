@@ -68,3 +68,44 @@ Feature: Spheres
         When set_transform(sphere.s, translation(5, 0, 0))
         And arrayintersections.xs ← intersect(sphere.s, ray.r)
         Then arrayintersections.xs.count = 0
+    Scenario: The normal on a sphere at a point on the x axis
+        Given sphere.s ← sphere()
+        When tuple.n ← normal_at(sphere.s, point(1, 0, 0))
+        Then tuple.n = vector(1, 0, 0)
+    Scenario: The normal on a sphere at a point on the y axis
+        Given sphere.s ← sphere()
+        When tuple.n ← normal_at(sphere.s, point(0, 1, 0))
+        Then tuple.n = vector(0, 1, 0)
+    Scenario: The normal on a sphere at a point on the z axis
+        Given sphere.s ← sphere()
+        When tuple.n ← normal_at(sphere.s, point(0, 0, 1))
+        Then tuple.n = vector(0, 0, 1)
+    Scenario: The normal on a sphere at a nonaxial point
+        Given sphere.s ← sphere()
+        When tuple.n ← normal_at(sphere.s, point(√3/3, √3/3, √3/3))
+        Then tuple.n = vector(√3/3, √3/3, √3/3)
+    Scenario: The normal is a normalized vector
+        Given sphere.s ← sphere()
+        When tuple.n ← normal_at(sphere.s, point(√3/3, √3/3, √3/3))
+        Then tuple.n = normalize(n)
+    Scenario: Computing the normal on a translated sphere
+        Given sphere.s ← sphere()
+        And set_transform(sphere.s, translation(0, 1, 0))
+        When matrix.n ← normal_at(sphere.s, point(0, 1.70711, -0.70711))
+        Then matrix.n = vector(0, 0.70711, -0.70711)
+    Scenario: Computing the normal on a transformed sphere
+        Given sphere.s ← sphere()
+        And matrix.m ← scaling(1, 0.5, 1) * rotation_z(π/5)
+        And set_transform(sphere.s, matrix.m)
+        When matrix.n ← normal_at(sphere.s, point(0, √2/2, -√2/2))
+        Then matrix.n = vector(0, 0.97014, -0.24254)
+    Scenario: A sphere has a default material
+        Given sphere.s ← sphere()
+        When material.m ← sphere.s.material
+        Then material.m = material()
+    Scenario: A sphere may be assigned a material
+        Given sphere.s ← sphere()
+        And material.m ← material()
+        And material.m.ambient ← 1
+        When sphere.s.material ← material.m
+        Then sphere.s.material = material.m

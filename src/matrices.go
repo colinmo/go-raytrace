@@ -246,3 +246,17 @@ func (m *Matrix) Inverse() Matrix {
 	}
 	return m2
 }
+
+func ViewTransform(from, to, up Tuple) Matrix {
+	forward := to.Subtract(from).Normalize()
+	left := forward.CrossProduct(up.Normalize())
+	trueUp := left.CrossProduct(forward)
+
+	orientation := NewMatrix(4, 4)
+	orientation.Cells = make(map[int]map[int]float64)
+	orientation.Cells[0] = map[int]float64{0: left.X, 1: left.Y, 2: left.Z, 3: 0}
+	orientation.Cells[1] = map[int]float64{0: trueUp.X, 1: trueUp.Y, 2: trueUp.Z, 3: 0}
+	orientation.Cells[2] = map[int]float64{0: -forward.X, 1: -forward.Y, 2: -forward.Z, 3: 0}
+	orientation.Cells[3] = map[int]float64{0: 0, 1: 0, 2: 0, 3: 1}
+	return orientation.MultiplyMatrix(NewTranslation(-from.X, -from.Y, -from.Z))
+}

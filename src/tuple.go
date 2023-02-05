@@ -151,6 +151,10 @@ func (v Tuple) ToMatrix() Matrix {
 	return M
 }
 
+func (v Tuple) Reflect(normal Tuple) Tuple {
+	return v.Subtract(normal.MultiplyScalar(2).MultiplyScalar(v.DotProduct(normal)))
+}
+
 func (v Tuple) ToString() string {
 	return fmt.Sprintf("[%f][%f][%f][%f]", v.X, v.Y, v.Z, v.W)
 }

@@ -35,6 +35,10 @@ func (c *Canvas) WritePixel(x, y int, col Color) {
 	c.Pixels[x][y] = col
 }
 
+func (c *Canvas) PixelAt(x, y int) Color {
+	return c.Pixels[x][y]
+}
+
 func (c *Canvas) ToPPM() string {
 	colorDepth := 255
 	body := []string{}
