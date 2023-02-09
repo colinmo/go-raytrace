@@ -3,15 +3,17 @@ package main
 import (
 	"log"
 	"math"
+	"math/rand"
 )
 
 type Intersection struct {
+	ID     int
 	T      float64
 	Object Shaper
 }
 
 func NewIntersection(t float64, shape Shaper) Intersection {
-	return Intersection{T: t, Object: shape}
+	return Intersection{ID: rand.Intn(100000), T: t, Object: shape}
 }
 
 func (i *Intersection) ObjectEquals(target Shaper) bool {
@@ -19,7 +21,7 @@ func (i *Intersection) ObjectEquals(target Shaper) bool {
 }
 
 func (i *Intersection) Equals(i2 Intersection) bool {
-	return i.T == i2.T && i.Object.GetID() == i2.Object.GetID()
+	return i.ID == i2.ID
 }
 
 func Intersections(x ...Intersection) map[int]Intersection {
@@ -44,16 +46,20 @@ func Hit(inters map[int]Intersection) (bool, Intersection) {
 }
 
 type Computations struct {
-	T         float64
-	Object    Shaper
-	Point     Tuple
-	Eyev      Tuple
-	Normalv   Tuple
-	OverPoint Tuple
-	Inside    bool
+	T          float64
+	Object     Shaper
+	Point      Tuple
+	Eyev       Tuple
+	Normalv    Tuple
+	OverPoint  Tuple
+	Reflectv   Tuple
+	Inside     bool
+	N1         float64
+	N2         float64
+	UnderPoint Tuple
 }
 
-func (i *Intersection) PrepareComputations(r Ray) Computations {
+func (i *Intersection) PrepareComputations(r Ray, xs map[int]Intersection) Computations {
 	comps := Computations{
 		T:      i.T,
 		Object: i.Object,
@@ -67,9 +73,52 @@ func (i *Intersection) PrepareComputations(r Ray) Computations {
 	} else {
 		comps.Inside = false
 	}
+	comps.Reflectv = r.Direction.Reflect(comps.Normalv)
 	if math.IsNaN(comps.OverPoint.X) {
 		log.Fatalf("OP: %v|%v|%v|%f", comps.OverPoint, comps.Point, comps.Normalv, epsilon)
 	}
 	comps.OverPoint = comps.Point.Add(comps.Normalv.MultiplyScalar(epsilon))
+	comps.UnderPoint = comps.Point.Subtract(comps.Normalv.MultiplyScalar(epsilon))
+
+	// Refraction/ reflection
+	containers := []Shaper{}
+
+outer:
+	for it := 0; it < len(xs); it++ {
+		inter := xs[it]
+
+		if i.Equals(inter) {
+			if len(containers) == 0 {
+				comps.N1 = 1.0
+			} else {
+				comps.N1 = containers[len(containers)-1].GetMaterial().RefractiveIndex
+			}
+		}
+
+		appended := false
+		for ij, j := range containers {
+			if j.Equals(inter.Object) {
+				containers = append(containers[:ij], containers[ij+1:]...)
+				appended = true
+				break
+			}
+		}
+		if !appended {
+			containers = append(containers, inter.Object)
+		}
+
+		if i.Equals(inter) {
+			if len(containers) == 0 {
+				comps.N2 = 1.0
+			} else {
+				comps.N2 = containers[len(containers)-1].GetMaterial().RefractiveIndex
+
+			}
+
+			break outer
+		}
+
+	}
+
 	return comps
 }

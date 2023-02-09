@@ -50,3 +50,22 @@ Feature: Materials
         And light.light ← point_light(point(0, 0, -10), color(1, 1, 1))
         When colors.result ← lighting(material.m, light.light, tuple.position, tuple.eyev, tuple.normalv, true)
         Then colors.result = color(0.1, 0.1, 0.1)
+    Scenario: Lighting with a pattern applied
+        Given material.m.pattern ← stripe_pattern(color(1, 1, 1), color(0, 0, 0))
+        And material.m.ambient ← 1
+        And material.m.diffuse ← 0
+        And material.m.specular ← 0
+        And tuple.eyev ← vector(0, 0, -1)
+        And tuple.normalv ← vector(0, 0, -1)
+        And light.light ← point_light(point(0, 0, -10), color(1, 1, 1))
+        When colors.c1 ← lighting(material.m, light.light, point(0.9, 0, 0), tuple.eyev, tuple.normalv, false)
+        And colors.c2 ← lighting(material.m, light.light, point(1.1, 0, 0), tuple.eyev, tuple.normalv, false)
+        Then colors.c1 = color(1, 1, 1)
+        And colors.c2 = color(0, 0, 0)
+    Scenario: Reflectivity for the default material
+        Given material.m ← material()
+        Then material.m.reflective = 0.0
+    Scenario: Transparency and Refractive Index for the default material
+        Given material.m ← material()
+        Then material.m.transparency = 0.0
+        And material.m.refractive_index = 1.0

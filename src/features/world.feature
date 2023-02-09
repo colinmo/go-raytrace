@@ -66,3 +66,62 @@ Feature: TOMORROW THE WORLD
         When computes.comps ← prepare_computations(intersection.i, ray.r)
         And colors.c ← shade_hit(world.w, computes.comps)
         Then colors.c = color(0.1, 0.1, 0.1)
+
+    Scenario: The reflected color for a nonreflective material
+        Given world.w ← default_world()
+        And ray.r ← ray(point(0, 0, 0), vector(0, 0, 1))
+        And shapes.shape ← the second object in world.w
+        And shapes.shape.material.ambient ← 1
+        And intersection.i ← intersection(1, shapes.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        And colors.color ← reflected_color(world.w, computes.comps)
+        Then colors.color = color(0, 0, 0)
+
+    Scenario: The reflected color for a reflective material
+        Given world.w ← default_world()
+        And shapes.shape ← plane() with:
+            | material.reflective | 0.5                   |
+            | transform           | translation(0, -1, 0) |
+        And shapes.shape is added to world.w
+        And ray.r ← ray(point(0, 0, -3), vector(0, -√2/2, √2/2))
+        And intersection.i ← intersection(√2, shapes.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        And colors.color ← reflected_color(world.w, computes.comps)
+        Then colors.color = color(0.19033, 0.23791, 0.14274)
+    Scenario: shade_hit() with a reflective material
+        Given world.w ← default_world()
+        And shapes.shape ← plane() with:
+            | material.reflective | 0.5                   |
+            | transform           | translation(0, -1, 0) |
+        And shapes.shape is added to world.w
+        And ray.r ← ray(point(0, 0, -3), vector(0, -√2/2, √2/2))
+        And intersection.i ← intersection(√2, shapes.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        And colors.color ← shade_hit(world.w, computes.comps)
+        Then colors.color = color(0.87677, 0.92436, 0.82918)
+
+    Scenario: color_at() with mutually reflective surfaces
+        Given world.w ← world()
+        And world.w.light ← point_light(point(0, 0, 0), color(1, 1, 1))
+        And shapes.lower ← plane() with:
+            | material.reflective | 1                     |
+            | transform           | translation(0, -1, 0) |
+        And shapes.lower is added to world.w
+        And shapes.upper ← plane() with:
+            | material.reflective | 1                    |
+            | transform           | translation(0, 1, 0) |
+        And shapes.upper is added to world.w
+        And ray.r ← ray(point(0, 0, 0), vector(0, 1, 0))
+        Then color_at(world.w, ray.r) should terminate successfully
+
+    Scenario: The reflected color at the maximum recursive depth
+        Given world.w ← default_world()
+        And shapes.shape ← plane() with:
+            | material.reflective | 0.5                   |
+            | transform           | translation(0, -1, 0) |
+        And shapes.shape is added to world.w
+        And ray.r ← ray(point(0, 0, -3), vector(0, -√2/2, √2/2))
+        And intersection.i ← intersection(√2, shapes.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        And colors.color ← reflected_color(world.w, computes.comps, 0)
+        Then colors.color = color(0, 0, 0)

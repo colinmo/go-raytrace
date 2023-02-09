@@ -4,7 +4,8 @@ import (
 	"math"
 )
 
-const epsilon = 0.00001
+const epsilon = 0.0001
+const maxReflects = 5
 
 func epsilonEquals(a, b float64) bool {
 	return math.Abs(a-b) < epsilon
@@ -19,4 +20,5 @@ func main() {
 	//ChapterSeven()
 	//ChapterEight()
 	ChapterNine()
+	ChapterTen()
 }

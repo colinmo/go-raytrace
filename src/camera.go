@@ -62,7 +62,7 @@ func (c *Camera) Render(w World) Canvas {
 	for y = 0; y < c.VSize; y++ {
 		for x = 0; x < c.HSize; x++ {
 			ray := c.RayForPixel(x, y)
-			color := w.ColorAt(ray)
+			color := w.ColorAt(ray, maxReflects)
 			image.WritePixel(int(x), int(y), color)
 		}
 	}

@@ -7,11 +7,12 @@ import (
 	"path/filepath"
 )
 
-func ChapterNine() {
+func ChapterTen() {
 
 	floor := NewPlane()
 	floor.SetTransform(NewScaling(10, 0.01, 10))
 	floor.SetMaterial(NewMaterial())
+	floor.Material.SetPattern(NewCheckerPattern(NewColor(1, 1, 1), NewColor(0, 0, 0)))
 	floor.Material.Color = NewColor(1, 0.9, 0.9)
 	floor.Material.Specular = 0
 
@@ -49,12 +50,12 @@ func ChapterNine() {
 	world.Objects = append(world.Objects, middle)
 	world.Objects = append(world.Objects, right)
 	world.Objects = append(world.Objects, floor)
-	camera := NewCamera(200, 100, math.Pi/3)
+	camera := NewCamera(400, 200, math.Pi/3)
 	camera.SetTransform(ViewTransform(NewPoint(0, 1.5, -5), NewPoint(0, 1, 0), NewVector(0, 1, 0)))
 
 	canvas := camera.Render(world)
 
-	tempFile := filepath.Join(os.TempDir(), "chapter09a.ppm")
+	tempFile := filepath.Join(os.TempDir(), "chapter10.ppm")
 	os.WriteFile(tempFile, []byte(canvas.ToPPM()), 0666)
 	fmt.Printf("Open %s\n", tempFile)
 }

@@ -18,8 +18,19 @@ func (l Light) Transform(m Matrix) Light {
 	return NewLight(m.MultiplyTuple(l.Position), l.Intensity)
 }
 
-func Lighting(material Material, light Light, point Tuple, eyev Tuple, normalv Tuple, inShadow bool) Color {
-	effectiveColor := material.Color.MultiplyColor(light.Intensity)
+func Lighting(
+	material Material,
+	object Shaper,
+	light Light,
+	point Tuple,
+	eyev Tuple,
+	normalv Tuple,
+	inShadow bool) Color {
+	color := material.Color
+	if material.HasPattern {
+		color = material.Pattern.ColorAtObject(object, point)
+	}
+	effectiveColor := color.MultiplyColor(light.Intensity)
 	lightV := light.Position.Subtract(point).Normalize()
 	ambient := effectiveColor.MultiplyScalar(material.Ambient)
 	black := NewColor(0, 0, 0)

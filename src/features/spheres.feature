@@ -102,3 +102,8 @@ Feature: Spheres
         And material.m.ambient ← 1
         When sphere.s.material ← material.m
         Then sphere.s.material = material.m
+        Scenario: A helper for producing a sphere with a glassy material
+Given sphere.s ← glass_sphere()
+Then sphere.s.transform = identity_matrix
+And sphere.s.material.transparency = 1.0
+And sphere.s.material.refractive_index = 1.5

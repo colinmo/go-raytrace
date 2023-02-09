@@ -16,7 +16,6 @@ func ChapterSix() {
 	half := wallSize / 2
 
 	canvas := NewCanvas(int(canvasPixels), int(canvasPixels))
-	color := NewColor(1, 0, 0)
 	shape := NewSphere()
 	shape.Material = NewMaterial()
 	shape.Material.Color = NewColor(1, 0.2, 1)
@@ -39,7 +38,7 @@ func ChapterSix() {
 				normal := hitInter.Object.NormalAt(point)
 				eye := r.Direction.Negative()
 				inShadow := false
-				color = Lighting(hitInter.Object.GetMaterial(), light, point, eye, normal, inShadow)
+				color := Lighting(hitInter.Object.GetMaterial(), NewSphere(), light, point, eye, normal, inShadow)
 				canvas.WritePixel(int(x), int(y), color)
 			}
 		}

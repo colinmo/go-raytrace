@@ -25,6 +25,19 @@ func NewSphere() *Sphere {
 	}
 }
 
+func NewGlassSphere() *Sphere {
+	rand.Seed(time.Now().UnixNano())
+	me := Sphere{
+		ID:        rand.Intn(100000),
+		Transform: BaseTransform,
+		Origin:    BaseOrigin,
+		Material:  BaseMaterial,
+	}
+	me.Material.Transparency = 1.0
+	me.Material.RefractiveIndex = 1.5
+	return &me
+}
+
 func (s *Sphere) GetSavedRay() Ray {
 	return NewRay(NewTuple(0, 0, 0, 0), NewTuple(0, 0, 0, 1))
 }

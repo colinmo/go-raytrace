@@ -97,3 +97,42 @@ Feature: Intersections
         When computes.comps ← prepare_computations(intersection.i, ray.r)
         Then computes.comps.over_point.z < -EPSILON/2
         And computes.comps.point.z > computes.comps.over_point.z
+    Scenario: Precomputing the reflection vector
+        Given shapes.shape ← plane()
+        And ray.r ← ray(point(0, 1, -1), vector(0, -√2/2, √2/2))
+        And intersection.i ← intersection(√2, shapes.shape)
+        When computes.comps ← prepare_computations(intersection.i, ray.r)
+        Then computes.comps.reflectv = vector(0, √2/2, √2/2)
+    Scenario Outline: Finding n1 and n2 at various intersections
+        Given shapes.A ← glass_sphere() with:
+            | transform                 | scaling(2, 2, 2) |
+            | material.refractive_index | 1.5              |
+        And shapes.B ← glass_sphere() with:
+            | transform                 | translation(0, 0, -0.25) |
+            | material.refractive_index | 2.0                      |
+        And shapes.C ← glass_sphere() with:
+            | transform                 | translation(0, 0, 0.25) |
+            | material.refractive_index | 2.5                     |
+        And ray.r ← ray(point(0, 0, -4), vector(0, 0, 1))
+        And arrayintersections.xs ← intersections(2:A, 2.75:B, 3.25:C, 4.75:B, 5.25:C, 6:A)
+        When computes.comps ← prepare_computations(arrayintersections.xs[<index>], ray.r, arrayintersections.xs)
+        Then computes.comps.n1 = <n1>
+        And computes.comps.n2 = <n2>
+
+        Examples:
+            | index | n1  | n2  |
+            | 0     | 1.0 | 1.5 |
+            | 1     | 1.5 | 2.0 |
+            | 2     | 2.0 | 2.5 |
+            | 3     | 2.5 | 2.5 |
+            | 4     | 2.5 | 1.5 |
+            | 5     | 1.5 | 1.0 |
+    Scenario: The under point is offset below the surface
+        Given ray.r ← ray(point(0, 0, -5), vector(0, 0, 1))
+        And shapes.shape ← glass_sphere() with:
+            | transform | translation(0, 0, 1) |
+        And intersection.i ← intersection(5, shapes.shape)
+        And arrayintersections.xs ← intersections(intersection.i)
+        When computes.comps ← prepare_computations(intersection.i, ray.r, arrayintersections.xs)
+        Then computes.comps.under_point.z > EPSILON/2
+        And computes.comps.point.z < computes.comps.under_point.z
