@@ -96,6 +96,9 @@ func NewTestPattern() *TestPattern {
 	}
 }
 
+func (p *TestPattern) GetPatternType() string {
+	return "test"
+}
 func (p *TestPattern) ColorAt(point Tuple) Color {
 	return NewColor(point.X, point.Y, point.Z)
 }

@@ -15,6 +15,7 @@ type Shaper interface {
 
 	GetMaterial() Material
 	SetMaterial(m Material)
+	GetType() string
 }
 
 type TestShapeType struct {
@@ -42,6 +43,8 @@ func NewTestShape() *TestShapeType {
 func (s *TestShapeType) Equals(t Shaper) bool {
 	return false
 }
+
+func (s *TestShapeType) GetType() string { return "test" }
 
 func (s *TestShapeType) GetSavedRay() Ray {
 	return s.SavedRay

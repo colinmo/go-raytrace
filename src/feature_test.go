@@ -29,7 +29,6 @@ type materials map[string]Material
 type worlds map[string]World
 type computations map[string]Computations
 type cameras map[string]Camera
-type planes map[string]Plane
 type patterns map[string]Pattern
 
 type tupletest struct {
@@ -48,7 +47,6 @@ type tupletest struct {
 	Worlds             worlds
 	Computations       computations
 	Cameras            cameras
-	Planes             planes
 	Patterns           patterns
 }
 
@@ -73,7 +71,6 @@ func TestFeatures(t *testing.T) {
 				tt.Worlds = worlds{}
 				tt.Computations = computations{}
 				tt.Cameras = cameras{}
-				tt.Planes = planes{}
 				tt.Patterns = patterns{}
 				return ctx, nil
 			})
@@ -310,20 +307,18 @@ func TestFeatures(t *testing.T) {
 
 			// CHAPTER ?PLANE
 			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) is empty$`, tt.arrayintersectionsxsIsEmpty)
-			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← local_intersect\(plane\.([a-zA-Z0-9_]+), ray\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsLocal_intersectplanepRayr)
-			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\]\.object = plane\.([a-zA-Z0-9_]+)$`, tt.arrayintersectionsxsObjectPlanep)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← local_intersect\(shapes\.([a-zA-Z0-9_]+), ray\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsLocal_intersectplanepRayr)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\]\.object = shapes\.([a-zA-Z0-9_]+)$`, tt.arrayintersectionsxsObjectPlanep)
 			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\]\.t = (\d+)$`, tt.arrayintersectionsxsT)
 			ctx.Step(`^color\.black ← color\((\d+), (\d+), (\d+)\)$`, tt.colorblackColor)
 			ctx.Step(`^color\.white ← color\((\d+), (\d+), (\d+)\)$`, tt.colorwhiteColor)
 			ctx.Step(`^pattern\.([a-zA-Z0-9_]+) ← stripe_pattern\(color\.white, color\.black\)$`, tt.patternpatternStripe_patterncolorwhiteColorblack)
 			ctx.Step(`^pattern\.([a-zA-Z0-9_]+)\.a = color\.white$`, tt.patternpatternaColorwhite)
 			ctx.Step(`^pattern\.([a-zA-Z0-9_]+)\.b = color\.black$`, tt.patternpatternbColorblack)
-			ctx.Step(`^plane\.([a-zA-Z0-9_]+) ← plane\(\)$`, tt.planepPlane)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← plane\(\)$`, tt.planepPlane)
 			ctx.Step(`^stripe_at\(pattern\.([a-zA-Z0-9_]+), point\((.*), (.*), (.*)\)\) = color\.black$`, tt.stripe_atpatternpatternPointColorblack)
 			ctx.Step(`^stripe_at\(pattern\.([a-zA-Z0-9_]+), point\((.*), (.*), (.*)\)\) = color\.white$`, tt.stripe_atpatternpatternPointColorwhite)
-			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← local_normal_at\(plane\.([a-zA-Z0-9_]+), point\(-(\d+), (\d+), (\d+)\)\)$`, tt.tuplenLocal_normal_atplanepPoint)
-			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← local_normal_at\(plane\.([a-zA-Z0-9_]+), point\((\d+), (\d+), -(\d+)\)\)$`, tt.tuplenLocal_normal_atplanepPoint)
-			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← local_normal_at\(plane\.([a-zA-Z0-9_]+), point\((\d+), (\d+), (\d+)\)\)$`, tt.tuplenLocal_normal_atplanepPoint)
+			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← local_normal_at\(shapes\.([a-zA-Z0-9_]+), point\((.+), (.+), (.+)\)\)$`, tt.tuplenLocal_normal_atplanepPoint)
 			ctx.Step(`^colors\.([a-zA-Z0-9_]+) ← lighting\(material\.([a-zA-Z0-9_]+), light\.([a-zA-Z0-9_]+), point\((.+), (.+), (.+)\), tuple\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+), false\)$`, tt.colorscLightingmaterialmLightlightPointTupleeyevTuplenormalvFalse)
 			ctx.Step(`^material\.([a-zA-Z0-9_]+)\.diffuse ← (.+)$`, tt.materialmdiffuse)
 			ctx.Step(`^material\.([a-zA-Z0-9_]+)\.pattern ← stripe_pattern\(color\((.+), (.+), (.+)\), color\((.+), (.+), (.+)\)\)$`, tt.materialmpatternStripe_patterncolorColor)
@@ -383,6 +378,17 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^computes\.([a-zA-Z0-9_]+) ← prepare_computations\(intersection\.([a-zA-Z0-9_]+), ray\.([a-zA-Z0-9_]+), arrayintersections\.([a-zA-Z0-9_]+)\)$`, tt.computescompsPrepare_computationsintersectioniRayrArrayintersectionsxs)
 			ctx.Step(`^computes\.([a-zA-Z0-9_]+)\.point\.z < computes\.([a-zA-Z0-9_]+)\.under_point\.z$`, tt.computescompspointzComputescompsunder_pointz)
 			ctx.Step(`^computes\.([a-zA-Z0-9_]+)\.under_point\.z > EPSILON\/2$`, tt.computescompsunder_pointzEPSILON)
+
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← intersections\(([^:]+):shapes\.([a-zA-Z0-9_]+), ([^:]+):shapes\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsIntersectionsShapesshapeShapesshape)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← intersections\(([^:]+):shapes\.([a-zA-Z0-9_]+), ([^:]+):shapes\.([a-zA-Z0-9_]+), ([^:]+):shapes\.([a-zA-Z0-9_]+), ([^:]+):shapes\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsIntersectionsShapesshapeShapesshape4)
+			ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+) ← intersections\(([^:]+):shapes\.([a-zA-Z0-9_]+)\)$`, tt.arrayintersectionsxsIntersectionsShapesshapeShapesshape1)
+			ctx.Step(`^colors\.([a-zA-Z0-9_]+) ← refracted_color\(world\.([a-zA-Z0-9_]+), computes\.([a-zA-Z0-9_]+), (\d+)\)$`, tt.colorscRefracted_colorworldwComputescomps)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← the first object in world\.([a-zA-Z0-9_]+)$`, tt.shapesshapeTheFirstObjectInWorldw)
+
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) has:$`, tt.shapesshapeHas)
+
+			ctx.Step(`^colors\.([a-zA-Z0-9_]+) ← shade_hit\(world\.([a-zA-Z0-9_]+), computes\.([a-zA-Z0-9_]+), (\d+)\)$`, tt.colorscolorShade_hitworldwComputescomps)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← sphere\(\) with:$`, tt.shapesballSphereWith)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -2260,7 +2266,28 @@ func (tt *tupletest) colorsresultColor(varName1, r, g, b string) error {
 	if !ok {
 		return fmt.Errorf("Color %s not available", varName1)
 	}
-
+	if STOPHERE {
+		log.Fatalf(
+			"\nPLANE %v\nTransform: %v\nTransparent: %v\nRefractive: %v\n\n"+
+				"SPHERE\nColor: %v\nAmbient: %v\nTransform: %v\n\n"+
+				"World: %v\n\n"+
+				"Ray: %v\n\n"+
+				"AI: %v\nID: %v\n\n"+
+				"Comps: %v\n\n",
+			tt.Shapes["floor"].GetID(),
+			tt.Shapes["floor"].GetTransform(),
+			tt.Shapes["floor"].GetMaterial().Transparency,
+			tt.Shapes["floor"].GetMaterial().RefractiveIndex,
+			tt.Shapes["ball"].GetMaterial().Color,
+			tt.Shapes["ball"].GetMaterial().Ambient,
+			tt.Shapes["ball"].GetTransform(),
+			tt.Worlds["w"],
+			tt.Rays["r"],
+			tt.ArrayIntersections["xs"],
+			tt.ArrayIntersections["xs"][0].Object.GetID(),
+			tt.Computations["comps"],
+		)
+	}
 	if a.Equals(NewColor(StringToFloat(r), StringToFloat(g), StringToFloat(b))) {
 		return nil
 	}
@@ -2981,7 +3008,7 @@ func (tt *tupletest) arrayintersectionsxsIsEmpty(varName1 string) error {
 }
 
 func (tt *tupletest) arrayintersectionsxsLocal_intersectplanepRayr(varName1, varName2, varName3 string) error {
-	pl, ok := tt.Planes[varName2]
+	pl, ok := tt.Shapes[varName2]
 	if !ok {
 		return fmt.Errorf("AI %s not available", varName2)
 	}
@@ -3002,7 +3029,7 @@ func (tt *tupletest) arrayintersectionsxsObjectPlanep(varName1 string, indx int,
 	if !ok {
 		return fmt.Errorf("AI %s not available", varName1)
 	}
-	pl, ok := tt.Planes[varName2]
+	pl, ok := tt.Shapes[varName2]
 	if !ok {
 		return fmt.Errorf("PL%s not available", varName2)
 	}
@@ -3046,8 +3073,9 @@ func (tt *tupletest) patternpatternbColorblack(varName1 string) error {
 	}
 	return fmt.Errorf("Pattern %s wasn't black, %f,%f,%f", varName1, pa.GetColorString("A").Red, pa.GetColorString("A").Green, pa.GetColorString("A").Blue)
 }
-func (tt *tupletest) planepPlane() error {
-	return godog.ErrPending
+func (tt *tupletest) planepPlane(varName1 string) error {
+	tt.Shapes[varName1] = NewPlane()
+	return nil
 }
 func (tt *tupletest) stripe_atpatternpatternPointColorblack(varName1, x, y, z string) error {
 	pa, ok := tt.Patterns[varName1]
@@ -3069,8 +3097,13 @@ func (tt *tupletest) stripe_atpatternpatternPointColorwhite(varName1, x, y, z st
 	}
 	return fmt.Errorf("Point %s,%s,%s was not white", x, y, z)
 }
-func (tt *tupletest) tuplenLocal_normal_atplanepPoint() error {
-	return godog.ErrPending
+func (tt *tupletest) tuplenLocal_normal_atplanepPoint(varName1, varName2, x, y, z string) error {
+	sa, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("MA%s not available", varName2)
+	}
+	tt.Tuples[varName1] = sa.LocalNormalAt(NewPoint(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
+	return nil
 }
 
 func (tt *tupletest) colorscLightingmaterialmLightlightPointTupleeyevTuplenormalvFalse(varName1, varName2, varName3, x, y, z, varName4, varName5 string) error {
@@ -3353,6 +3386,7 @@ func (tt *tupletest) shapesshapeIsAddedToWorldw(varName1, varName2 string) error
 		return fmt.Errorf("we%s not avail", varName2)
 	}
 	wr.Objects = append(wr.Objects, sh)
+	tt.Worlds[varName2] = wr
 	return nil
 }
 
@@ -3360,24 +3394,48 @@ func (tt *tupletest) shapesshapePlaneWith(varName1 string, arg1 *godog.Table) er
 	pl := NewPlane()
 	for _, x := range arg1.Rows {
 		switch x.Cells[0].Value {
+		case "material.ambient":
+			pl.Material.Ambient = StringToFloat(x.Cells[1].Value)
+		case "material.pattern":
+			if x.Cells[1].Value == "test_pattern()" {
+				pl.Material.SetPattern(NewTestPattern())
+			}
 		case "material.reflective":
 			pl.Material.Reflective = StringToFloat(x.Cells[1].Value)
+		case "material.refractive_index":
+			pl.Material.RefractiveIndex = StringToFloat(x.Cells[1].Value)
+		case "material.transparency":
+			pl.Material.Transparency = StringToFloat(x.Cells[1].Value)
 		case "transform":
 			funko := regexp.MustCompile(`^(.*)\((.*), (.*), (.*)\)$`)
 			matches := funko.FindStringSubmatch(x.Cells[1].Value)
 			switch matches[1] {
 			case "translation":
 				dude := pl.GetTransform()
+				dude2 := dude.MultiplyMatrix(
+					NewTranslation(
+						StringToFloat(matches[2]),
+						StringToFloat(matches[3]),
+						StringToFloat(matches[4]),
+					),
+				)
+				pl.SetTransform(dude2) // p159
+			case "scaling":
+				dude := pl.GetTransform()
 				pl.SetTransform(
 					dude.MultiplyMatrix(
-						NewTranslation(
+						NewScaling(
 							StringToFloat(matches[2]),
 							StringToFloat(matches[3]),
 							StringToFloat(matches[4]),
 						),
 					),
 				)
+			default:
+				log.Fatal("Unknown transform")
 			}
+		default:
+			log.Fatal("Unknown Aspect")
 		}
 	}
 	tt.Shapes[varName1] = pl
@@ -3602,4 +3660,211 @@ func (tt *tupletest) computescompsunder_pointzEPSILON(varName1 string) error {
 		return nil
 	}
 	return fmt.Errorf("M")
+}
+
+func (tt *tupletest) arrayintersectionsxsIntersectionsShapesshapeShapesshape(varName1, inter1, varName2, inter2, varName3 string) error {
+	sh1, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	sh2, ok := tt.Shapes[varName3]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	tt.ArrayIntersections[varName1] = Intersections(
+		NewIntersection(StringToFloat(inter1), sh1),
+		NewIntersection(StringToFloat(inter2), sh2),
+	)
+	return nil
+}
+func (tt *tupletest) colorscRefracted_colorworldwComputescomps(varName1, varName2, varName3 string, max int) error {
+	w, ok := tt.Worlds[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	co, ok := tt.Computations[varName3]
+	if !ok {
+		return fmt.Errorf("Y")
+	}
+	tt.Colors[varName1] = w.RefractedColor(co, max)
+	return nil
+}
+func (tt *tupletest) shapesshapeTheFirstObjectInWorldw(varName1, varName2 string) error {
+	w, ok := tt.Worlds[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	tt.Shapes[varName1] = w.Objects[0]
+	return nil
+}
+
+func (tt *tupletest) shapesshapeHas(varName1 string, arg1 *godog.Table) error {
+	sh1, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	m := sh1.GetMaterial()
+
+	for _, x := range arg1.Rows {
+		switch x.Cells[0].Value {
+		case "material.ambient":
+			m.Ambient = StringToFloat(x.Cells[1].Value)
+		case "material.pattern":
+			if x.Cells[1].Value == "test_pattern()" {
+				m.SetPattern(NewTestPattern())
+			}
+		case "material.reflective":
+			m.Reflective = StringToFloat(x.Cells[1].Value)
+		case "material.refractive_index":
+			m.RefractiveIndex = StringToFloat(x.Cells[1].Value)
+		case "material.transparency":
+			m.Transparency = StringToFloat(x.Cells[1].Value)
+		case "transform":
+			funko := regexp.MustCompile(`^(.*)\((.*), (.*), (.*)\)$`)
+			matches := funko.FindStringSubmatch(x.Cells[1].Value)
+			switch matches[1] {
+			case "translation":
+				dude := sh1.GetTransform()
+				sh1.SetTransform(
+					dude.MultiplyMatrix(
+						NewTranslation(
+							StringToFloat(matches[2]),
+							StringToFloat(matches[3]),
+							StringToFloat(matches[4]),
+						),
+					),
+				)
+			case "scaling":
+				dude := sh1.GetTransform()
+				sh1.SetTransform(
+					dude.MultiplyMatrix(
+						NewScaling(
+							StringToFloat(matches[2]),
+							StringToFloat(matches[3]),
+							StringToFloat(matches[4]),
+						),
+					),
+				)
+			}
+		}
+	}
+
+	sh1.SetMaterial(m)
+	tt.Shapes[varName1] = sh1
+	return nil
+}
+
+func (tt *tupletest) arrayintersectionsxsIntersectionsShapesshapeShapesshape4(
+	varName1,
+	inter1, varName2,
+	inter2, varName3,
+	inter3, varName4,
+	inter4, varName5 string) error {
+	sh1, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	sh2, ok := tt.Shapes[varName3]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	sh3, ok := tt.Shapes[varName4]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	sh4, ok := tt.Shapes[varName5]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	tt.ArrayIntersections[varName1] = Intersections(
+		NewIntersection(StringToFloat(inter1), sh1),
+		NewIntersection(StringToFloat(inter2), sh2),
+		NewIntersection(StringToFloat(inter3), sh3),
+		NewIntersection(StringToFloat(inter4), sh4),
+	)
+	return nil
+}
+
+func (tt *tupletest) arrayintersectionsxsIntersectionsShapesshapeShapesshape1(
+	varName1,
+	inter1, varName2 string) error {
+	sh1, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	tt.ArrayIntersections[varName1] = Intersections(
+		NewIntersection(StringToFloat(inter1), sh1),
+	)
+	return nil
+}
+
+func (tt *tupletest) colorscolorShade_hitworldwComputescomps(varName1, varName2, varName3 string, max int) error {
+	wld, ok := tt.Worlds[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	com, ok := tt.Computations[varName3]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	tt.Colors[varName1] = wld.ShadeHit(com, max)
+	return nil
+}
+func (tt *tupletest) shapesballSphereWith(varName1 string, arg1 *godog.Table) error {
+	sh1 := NewSphere()
+
+	for _, x := range arg1.Rows {
+		switch x.Cells[0].Value {
+		case "material.ambient":
+			sh1.Material.Ambient = StringToFloat(x.Cells[1].Value)
+		case "material.color":
+			funko := regexp.MustCompile(`^\((.*), (.*), (.*)\)$`)
+			matches := funko.FindStringSubmatch(x.Cells[1].Value)
+			sh1.Material.Color = NewColor(
+				StringToFloat(matches[1]),
+				StringToFloat(matches[2]),
+				StringToFloat(matches[3]))
+		case "material.pattern":
+			if x.Cells[1].Value == "test_pattern()" {
+				sh1.Material.SetPattern(NewTestPattern())
+			}
+		case "material.reflective":
+			sh1.Material.Reflective = StringToFloat(x.Cells[1].Value)
+		case "material.refractive_index":
+			sh1.Material.RefractiveIndex = StringToFloat(x.Cells[1].Value)
+		case "material.transparency":
+			sh1.Material.Transparency = StringToFloat(x.Cells[1].Value)
+		case "transform":
+			funko := regexp.MustCompile(`^(.*)\((.*), (.*), (.*)\)$`)
+			matches := funko.FindStringSubmatch(x.Cells[1].Value)
+			switch matches[1] {
+			case "translation":
+				dude := sh1.GetTransform()
+				sh1.SetTransform(
+					dude.MultiplyMatrix(
+						NewTranslation(
+							StringToFloat(matches[2]),
+							StringToFloat(matches[3]),
+							StringToFloat(matches[4]),
+						),
+					),
+				)
+			case "scaling":
+				dude := sh1.GetTransform()
+				sh1.SetTransform(
+					dude.MultiplyMatrix(
+						NewScaling(
+							StringToFloat(matches[2]),
+							StringToFloat(matches[3]),
+							StringToFloat(matches[4]),
+						),
+					),
+				)
+			}
+		}
+	}
+
+	tt.Shapes[varName1] = sh1
+	//STOPHERE = true
+	return nil
 }

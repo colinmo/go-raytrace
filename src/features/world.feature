@@ -125,3 +125,67 @@ Feature: TOMORROW THE WORLD
         When computes.comps ← prepare_computations(intersection.i, ray.r)
         And colors.color ← reflected_color(world.w, computes.comps, 0)
         Then colors.color = color(0, 0, 0)
+    Scenario: The refracted color with an opaque surface
+        Given world.w ← default_world()
+        And shapes.shape ← the first object in world.w
+        And ray.r ← ray(point(0, 0, -5), vector(0, 0, 1))
+        And arrayintersections.xs ← intersections(4:shapes.shape, 6:shapes.shape)
+        When computes.comps ← prepare_computations(arrayintersections.xs[0], ray.r, arrayintersections.xs)
+        And colors.c ← refracted_color(world.w, computes.comps, 5)
+        Then colors.c = color(0, 0, 0)
+    Scenario: The refracted color at the maximum recursive depth
+        Given world.w ← default_world()
+        And shapes.shape ← the first object in world.w
+        And shapes.shape has:
+            | material.transparency     | 1.0 |
+            | material.refractive_index | 1.5 |
+        And ray.r ← ray(point(0, 0, -5), vector(0, 0, 1))
+        And arrayintersections.xs ← intersections(4:shapes.shape, 6:shapes.shape)
+        When computes.comps ← prepare_computations(arrayintersections.xs[0], ray.r, arrayintersections.xs)
+        And colors.c ← refracted_color(world.w, computes.comps, 0)
+        Then colors.c = color(0, 0, 0)
+    Scenario: The refracted color under total internal reflection
+        Given world.w ← default_world()
+        And shapes.shape ← the first object in world.w
+        And shapes.shape has:
+            | material.transparency     | 1.0 |
+            | material.refractive_index | 1.5 |
+        And ray.r ← ray(point(0, 0, √2/2), vector(0, 1, 0))
+        And arrayintersections.xs ← intersections(-√2/2:shapes.shape, √2/2:shapes.shape)
+        # NOTE: this time you're inside the sphere, so you need
+        # to look at the second intersection, xs[1], not xs[0]
+        When computes.comps ← prepare_computations(arrayintersections.xs[1], ray.r, arrayintersections.xs)
+        And colors.c ← refracted_color(world.w, computes.comps, 5)
+        Then colors.c = color(0, 0, 0)
+    Scenario: The refracted color with a refracted ray
+        Given world.w ← default_world()
+        And shapes.A ← the first object in world.w
+        And shapes.A has:
+            | material.ambient | 1.0            |
+            | material.pattern | test_pattern() |
+        And shapes.B ← the second object in world.w
+        And shapes.B has:
+            | material.transparency     | 1.0 |
+            | material.refractive_index | 1.5 |
+        And ray.r ← ray(point(0, 0, 0.1), vector(0, 1, 0))
+        And arrayintersections.xs ← intersections(-0.9899:shapes.A, -0.4899:shapes.B, 0.4899:shapes.B, 0.9899:shapes.A)
+        When computes.comps ← prepare_computations(arrayintersections.xs[2], ray.r, arrayintersections.xs)
+        And colors.c ← refracted_color(world.w, computes.comps, 5)
+        Then colors.c = color(0, 0.99888, 0.04725)
+    Scenario: shade_hit() with a transparent material
+        Given world.w ← default_world()
+        And shapes.floor ← plane() with:
+            | transform                 | translation(0, -1, 0) |
+            | material.transparency     | 0.5                   |
+            | material.refractive_index | 1.5                   |
+        And shapes.floor is added to world.w
+        And shapes.ball ← sphere() with:
+            | material.color   | (1, 0, 0)                  |
+            | material.ambient | 0.5                        |
+            | transform        | translation(0, -3.5, -0.5) |
+        And shapes.ball is added to world.w
+        And ray.r ← ray(point(0, 0, -3), vector(0, -√2/2, √2/2))
+        And arrayintersections.xs ← intersections(√2:shapes.floor)
+        When computes.comps ← prepare_computations(arrayintersections.xs[0], ray.r, arrayintersections.xs)
+        And colors.color ← shade_hit(world.w, computes.comps, 5)
+        Then colors.color = color(0.93642, 0.68642, 0.68642)

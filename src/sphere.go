@@ -37,6 +37,7 @@ func NewGlassSphere() *Sphere {
 	me.Material.RefractiveIndex = 1.5
 	return &me
 }
+func (s *Sphere) GetType() string { return "sphere" }
 
 func (s *Sphere) GetSavedRay() Ray {
 	return NewRay(NewTuple(0, 0, 0, 0), NewTuple(0, 0, 0, 1))
@@ -75,9 +76,14 @@ func (s *Sphere) LocalNormalAt(p Tuple) Tuple {
 }
 
 func (s *Sphere) Equals(t Shaper) bool {
-	return s.Transform.EqualsMatrix(t.GetTransform()) &&
-		s.Origin.EqualsTuple(t.GetOrigin()) &&
-		s.Material.Equals(t.GetMaterial())
+	equals := s.Transform.EqualsMatrix(t.GetTransform()) &&
+		s.Origin.EqualsTuple(t.GetOrigin())
+	if s.Material.HasPattern && t.GetMaterial().HasPattern {
+		equals = equals && s.Material.Equals(t.GetMaterial())
+	} else if s.Material.HasPattern || t.GetMaterial().HasPattern {
+		return false
+	}
+	return equals
 }
 
 func (s *Sphere) SetTransform(t Matrix) {

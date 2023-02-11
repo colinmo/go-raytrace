@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"math"
 	"sort"
 )
 
@@ -64,8 +66,25 @@ func (w *World) Intersect(r Ray) map[int]Intersection {
 	for x, o := range inters {
 		inters2[x] = o
 	}
+	/*
+		if STOPHERE {
+			log.Fatalf(
+				"Objects: %d\n\nRay: %v\nO3: %s:%v\nO4: %s:%v\n\nC: %d: %v|%v",
+				len(w.Objects),
+				r,
+				w.Objects[2].GetType(),
+				w.Objects[2],
+				w.Objects[3].GetType(),
+				w.Objects[3],
+				len(inters),
+				inters,
+				inters2)
+		}
+	*/
 	return inters2
 }
+
+var STOPHERE = false
 
 func (w *World) ShadeHit(comps Computations, remaining int) Color {
 	inShadow := w.IsShadowed(comps.OverPoint)
@@ -78,12 +97,19 @@ func (w *World) ShadeHit(comps Computations, remaining int) Color {
 		comps.Normalv,
 		inShadow)
 	reflected := w.ReflectedColor(comps, remaining)
-	return surface.Add(reflected)
+	refracted := w.RefractedColor(comps, remaining)
+	if STOPHERE {
+		log.Fatalf("Stopping here %v|%d\n", refracted, remaining)
+	}
+	return surface.Add(reflected).Add(refracted)
 }
 
 func (w *World) ColorAt(r Ray, remaining int) Color {
 	i := w.Intersect(r)
 	hit, is := Hit(i)
+	if STOPHERE {
+		log.Fatalf("H: %v\nIs: %v\nI: %v\n", hit, is, i)
+	}
 	if !hit {
 		return NewColor(0, 0, 0)
 	}
@@ -116,4 +142,39 @@ func (w *World) ReflectedColor(comps Computations, remaining int) Color {
 	reflectRay := NewRay(comps.OverPoint, comps.Reflectv)
 	color := w.ColorAt(reflectRay, remaining-1)
 	return color.MultiplyScalar(comps.Object.GetMaterial().Reflective)
+}
+
+func (w *World) RefractedColor(comps Computations, remaining int) Color {
+	if remaining < 1 {
+		return NewColor(0, 0, 0)
+	}
+	if comps.Object.GetMaterial().Transparency == 0 {
+		return NewColor(0, 0, 0)
+	}
+	nRatio := comps.N1 / comps.N2
+	cosI := comps.Eyev.DotProduct(comps.Normalv)
+	sin2T := nRatio * nRatio * (1 - cosI*cosI)
+	if sin2T > 1 {
+		return NewColor(0, 0, 0)
+	}
+	cosT := math.Sqrt(1.0 - sin2T)
+	direction := comps.Normalv.MultiplyScalar(nRatio*cosI - cosT).Subtract(comps.Eyev.MultiplyScalar(nRatio))
+	refractRay := NewRay(comps.UnderPoint, direction)
+	if STOPHERE {
+		c1 := w.ColorAt(refractRay, remaining-1)
+		color := c1.MultiplyScalar(comps.Object.GetMaterial().Transparency)
+		log.Fatalf(
+			"REFRACT FAIL %v\n%v\n%v\nN %f, C %f, S %f, CT %f\nP: %v, D: %v",
+			refractRay,
+			c1,
+			color,
+			nRatio,
+			cosI,
+			sin2T,
+			cosT,
+			comps.UnderPoint,
+			direction)
+	}
+	color := w.ColorAt(refractRay, remaining-1).MultiplyScalar(comps.Object.GetMaterial().Transparency)
+	return color
 }
