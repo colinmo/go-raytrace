@@ -49,7 +49,7 @@ func ChapterNine() {
 	world.Objects = append(world.Objects, middle)
 	world.Objects = append(world.Objects, right)
 	world.Objects = append(world.Objects, floor)
-	camera := NewCamera(200, 100, math.Pi/3)
+	camera := NewCamera(600, 300, math.Pi/3)
 	camera.SetTransform(ViewTransform(NewPoint(0, 1.5, -5), NewPoint(0, 1, 0), NewVector(0, 1, 0)))
 
 	canvas := camera.Render(world)

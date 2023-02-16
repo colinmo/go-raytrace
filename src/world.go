@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"math"
 	"sort"
 )
@@ -92,14 +91,17 @@ func (w *World) ShadeHit(comps Computations, remaining int) Color {
 		comps.Object.GetMaterial(),
 		comps.Object,
 		w.GetLight(),
-		comps.Point,
+		comps.OverPoint,
 		comps.Eyev,
 		comps.Normalv,
 		inShadow)
 	reflected := w.ReflectedColor(comps, remaining)
 	refracted := w.RefractedColor(comps, remaining)
-	if STOPHERE {
-		log.Fatalf("Stopping here %v|%d\n", refracted, remaining)
+
+	material := comps.Object.GetMaterial()
+	if material.Reflective > 0 && material.Transparency > 0 {
+		reflectance := comps.Schlick()
+		return surface.Add(reflected.MultiplyScalar(reflectance)).Add(refracted.MultiplyScalar(1 - reflectance))
 	}
 	return surface.Add(reflected).Add(refracted)
 }
@@ -107,9 +109,7 @@ func (w *World) ShadeHit(comps Computations, remaining int) Color {
 func (w *World) ColorAt(r Ray, remaining int) Color {
 	i := w.Intersect(r)
 	hit, is := Hit(i)
-	if STOPHERE {
-		log.Fatalf("H: %v\nIs: %v\nI: %v\n", hit, is, i)
-	}
+
 	if !hit {
 		return NewColor(0, 0, 0)
 	}
@@ -160,21 +160,23 @@ func (w *World) RefractedColor(comps Computations, remaining int) Color {
 	cosT := math.Sqrt(1.0 - sin2T)
 	direction := comps.Normalv.MultiplyScalar(nRatio*cosI - cosT).Subtract(comps.Eyev.MultiplyScalar(nRatio))
 	refractRay := NewRay(comps.UnderPoint, direction)
-	if STOPHERE {
-		c1 := w.ColorAt(refractRay, remaining-1)
-		color := c1.MultiplyScalar(comps.Object.GetMaterial().Transparency)
-		log.Fatalf(
-			"REFRACT FAIL %v\n%v\n%v\nN %f, C %f, S %f, CT %f\nP: %v, D: %v",
-			refractRay,
-			c1,
-			color,
-			nRatio,
-			cosI,
-			sin2T,
-			cosT,
-			comps.UnderPoint,
-			direction)
-	}
+	/*
+		if STOPHERE {
+			c1 := w.ColorAt(refractRay, remaining-1)
+			color := c1.MultiplyScalar(comps.Object.GetMaterial().Transparency)
+			log.Fatalf(
+				"REFRACT FAIL %v\n%v\n%v\nN %f, C %f, S %f, CT %f\nP: %v, D: %v",
+				refractRay,
+				c1,
+				color,
+				nRatio,
+				cosI,
+				sin2T,
+				cosT,
+				comps.UnderPoint,
+				direction)
+		}
+	*/
 	color := w.ColorAt(refractRay, remaining-1).MultiplyScalar(comps.Object.GetMaterial().Transparency)
 	return color
 }

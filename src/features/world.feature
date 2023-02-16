@@ -189,3 +189,21 @@ Feature: TOMORROW THE WORLD
         When computes.comps ← prepare_computations(arrayintersections.xs[0], ray.r, arrayintersections.xs)
         And colors.color ← shade_hit(world.w, computes.comps, 5)
         Then colors.color = color(0.93642, 0.68642, 0.68642)
+    Scenario: shade_hit() with a reflective, transparent material
+        Given world.w ← default_world()
+        And ray.r ← ray(point(0, 0, -3), vector(0, -√2/2, √2/2))
+        And shapes.floor ← plane() with:
+            | transform                 | translation(0, -1, 0) |
+            | material.reflective       | 0.5                   |
+            | material.transparency     | 0.5                   |
+            | material.refractive_index | 1.5                   |
+        And shapes.floor is added to world.w
+        And shapes.ball ← sphere() with:
+            | material.color   | (1, 0, 0)                  |
+            | material.ambient | 0.5                        |
+            | transform        | translation(0, -3.5, -0.5) |
+        And shapes.ball is added to world.w
+        And arrayintersections.xs ← intersections(√2:shapes.floor)
+        When computes.comps ← prepare_computations(arrayintersections.xs[0], ray.r, arrayintersections.xs)
+        And colors.color ← shade_hit(world.w, computes.comps, 5)
+        Then colors.color = color(0.93391, 0.69643, 0.69243)

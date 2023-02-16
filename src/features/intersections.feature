@@ -136,3 +136,24 @@ Feature: Intersections
         When computes.comps ← prepare_computations(intersection.i, ray.r, arrayintersections.xs)
         Then computes.comps.under_point.z > EPSILON/2
         And computes.comps.point.z < computes.comps.under_point.z
+    Scenario: The Schlick approximation under total internal reflection
+        Given shapes.shape ← glass_sphere()
+        And ray.r ← ray(point(0, 0, √2/2), vector(0, 1, 0))
+        And arrayintersections.xs ← intersections(-√2/2:shapes.shape, √2/2:shapes.shape)
+        When computes.comps ← prepare_computations(arrayintersections.xs[1], ray.r, arrayintersections.xs)
+        And floats.reflectance ← schlick(computes.comps)
+        Then floats.reflectance = 1.0
+    Scenario: The Schlick approximation with a perpendicular viewing angle
+        Given shapes.shape ← glass_sphere()
+        And ray.r ← ray(point(0, 0, 0), vector(0, 1, 0))
+        And arrayintersections.xs ← intersections(-1:shapes.shape, 1:shapes.shape)
+        When computes.comps ← prepare_computations(arrayintersections.xs[1], ray.r, arrayintersections.xs)
+        And floats.reflectance ← schlick(computes.comps)
+        Then floats.reflectance = 0.04
+    Scenario: The Schlick approximation with small angle and n2 > n1
+        Given shapes.shape ← glass_sphere()
+        And ray.r ← ray(point(0, 0.99, -2), vector(0, 0, 1))
+        And arrayintersections.xs ← intersections(1.8589:shapes.shape)
+        When computes.comps ← prepare_computations(arrayintersections.xs[0], ray.r, arrayintersections.xs)
+        And floats.reflectance ← schlick(computes.comps)
+        Then floats.reflectance = 0.48873

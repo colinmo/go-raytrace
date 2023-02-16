@@ -16,6 +16,12 @@ type Shaper interface {
 	GetMaterial() Material
 	SetMaterial(m Material)
 	GetType() string
+	GetMinimum() float64
+	GetMaximum() float64
+	SetMinimum(m float64)
+	SetMaximum(m float64)
+	GetClosed() bool
+	SetClosed(b bool)
 }
 
 type TestShapeType struct {

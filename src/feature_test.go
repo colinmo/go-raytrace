@@ -30,6 +30,7 @@ type worlds map[string]World
 type computations map[string]Computations
 type cameras map[string]Camera
 type patterns map[string]Pattern
+type floats map[string]float64
 
 type tupletest struct {
 	Tuples             tuples
@@ -48,6 +49,7 @@ type tupletest struct {
 	Computations       computations
 	Cameras            cameras
 	Patterns           patterns
+	Floats             floats
 }
 
 func TestFeatures(t *testing.T) {
@@ -72,6 +74,7 @@ func TestFeatures(t *testing.T) {
 				tt.Computations = computations{}
 				tt.Cameras = cameras{}
 				tt.Patterns = patterns{}
+				tt.Floats = floats{}
 				return ctx, nil
 			})
 
@@ -389,6 +392,28 @@ func TestFeatures(t *testing.T) {
 
 			ctx.Step(`^colors\.([a-zA-Z0-9_]+) ← shade_hit\(world\.([a-zA-Z0-9_]+), computes\.([a-zA-Z0-9_]+), (\d+)\)$`, tt.colorscolorShade_hitworldwComputescomps)
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← sphere\(\) with:$`, tt.shapesballSphereWith)
+			ctx.Step(`^floats\.([a-zA-Z0-9_]+) = (.*)$`, tt.floatsreflectance)
+			ctx.Step(`^floats\.([a-zA-Z0-9_]+) ← schlick\(computes\.([a-zA-Z0-9_]+)\)$`, tt.floatsreflectanceSchlickcomputescomps)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← glass_sphere\(\)$`, tt.shapesshapeGlass_sphere)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← cube\(\)$`, tt.shapescCube)
+
+			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← local_normal_at\(shapes\.([a-zA-Z0-9_]+), tuple\.([a-zA-Z0-9_]+)\)$`, tt.tuplenormalLocal_normal_atshapescTuplep)
+
+			// 12
+
+			ctx.Step(`^ray\.([a-zA-Z0-9_]+) ← ray\(point\((.+), (.+), (.+)\), tuple\.([a-zA-Z0-9_]+)\)$`, tt.rayrRaypointTupledirection)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← cylinder\(\)$`, tt.shapescylCylinder)
+			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← normalize\(vector\((.+), (.+), (.+)\)\)$`, tt.tupledirectionNormalizevector)
+
+			//13
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.maximum = infinity$`, tt.shapescylmaximumInfinity)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.minimum = -infinity$`, tt.shapescylminimumInfinity)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.maximum ← (.+)$`, tt.shapescylmaximum)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.minimum ← (.+)$`, tt.shapescylminimum)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.closed = (true|false)$`, tt.shapescylclosedFalse)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.closed ← (true|false)$`, tt.shapescylclosedTrue)
+
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← cone\(\)$`, tt.shapesshapeCone)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -1741,7 +1766,7 @@ func (tt *tupletest) slicexsDT(varName1 string, index int, expect string) error 
 	if !ok {
 		return fmt.Errorf("IntersectionArray %s not available", varName1)
 	}
-	if a[index].T == StringToFloat(expect) {
+	if epsilonEquals(a[index].T, StringToFloat(expect)) {
 		return nil
 	}
 	return fmt.Errorf("IntersectionArray index %d fail, is %f not %s", index, a[index].T, expect)
@@ -2266,28 +2291,30 @@ func (tt *tupletest) colorsresultColor(varName1, r, g, b string) error {
 	if !ok {
 		return fmt.Errorf("Color %s not available", varName1)
 	}
-	if STOPHERE {
-		log.Fatalf(
-			"\nPLANE %v\nTransform: %v\nTransparent: %v\nRefractive: %v\n\n"+
-				"SPHERE\nColor: %v\nAmbient: %v\nTransform: %v\n\n"+
-				"World: %v\n\n"+
-				"Ray: %v\n\n"+
-				"AI: %v\nID: %v\n\n"+
-				"Comps: %v\n\n",
-			tt.Shapes["floor"].GetID(),
-			tt.Shapes["floor"].GetTransform(),
-			tt.Shapes["floor"].GetMaterial().Transparency,
-			tt.Shapes["floor"].GetMaterial().RefractiveIndex,
-			tt.Shapes["ball"].GetMaterial().Color,
-			tt.Shapes["ball"].GetMaterial().Ambient,
-			tt.Shapes["ball"].GetTransform(),
-			tt.Worlds["w"],
-			tt.Rays["r"],
-			tt.ArrayIntersections["xs"],
-			tt.ArrayIntersections["xs"][0].Object.GetID(),
-			tt.Computations["comps"],
-		)
-	}
+	/*
+		if STOPHERE {
+			log.Fatalf(
+				"\nPLANE %v\nTransform: %v\nTransparent: %v\nRefractive: %v\n\n"+
+					"SPHERE\nColor: %v\nAmbient: %v\nTransform: %v\n\n"+
+					"World: %v\n\n"+
+					"Ray: %v\n\n"+
+					"AI: %v\nID: %v\n\n"+
+					"Comps: %v\n\n",
+				tt.Shapes["floor"].GetID(),
+				tt.Shapes["floor"].GetTransform(),
+				tt.Shapes["floor"].GetMaterial().Transparency,
+				tt.Shapes["floor"].GetMaterial().RefractiveIndex,
+				tt.Shapes["ball"].GetMaterial().Color,
+				tt.Shapes["ball"].GetMaterial().Ambient,
+				tt.Shapes["ball"].GetTransform(),
+				tt.Worlds["w"],
+				tt.Rays["r"],
+				tt.ArrayIntersections["xs"],
+				tt.ArrayIntersections["xs"][0].Object.GetID(),
+				tt.Computations["comps"],
+			)
+		}
+	*/
 	if a.Equals(NewColor(StringToFloat(r), StringToFloat(g), StringToFloat(b))) {
 		return nil
 	}
@@ -3866,5 +3893,149 @@ func (tt *tupletest) shapesballSphereWith(varName1 string, arg1 *godog.Table) er
 
 	tt.Shapes[varName1] = sh1
 	//STOPHERE = true
+	return nil
+}
+
+func (tt *tupletest) floatsreflectance(varName1, val string) error {
+	fl, ok := tt.Floats[varName1]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	if epsilonEquals(fl, StringToFloat(val)) {
+		return nil
+	}
+	return fmt.Errorf("Casdf")
+}
+
+func (tt *tupletest) floatsreflectanceSchlickcomputescomps(varName1, varName2 string) error {
+	cm, ok := tt.Computations[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+
+	tt.Floats[varName1] = cm.Schlick()
+	return nil
+}
+
+func (tt *tupletest) shapesshapeGlass_sphere(varName1 string) error {
+	tt.Shapes[varName1] = NewGlassSphere()
+	return nil
+}
+
+func (tt *tupletest) shapescCube(varName1 string) error {
+	tt.Shapes[varName1] = NewCube()
+	return nil
+}
+
+func (tt *tupletest) tuplenormalLocal_normal_atshapescTuplep(varName1, varName2, varName3 string) error {
+	c, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	p, ok := tt.Tuples[varName3]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	tt.Tuples[varName1] = c.LocalNormalAt(p)
+	return nil
+}
+
+func (tt *tupletest) rayrRaypointTupledirection(varName1, x, y, z, varName3 string) error {
+	q, ok := tt.Tuples[varName3]
+	if !ok {
+		return fmt.Errorf("X")
+	}
+	tt.Rays[varName1] = NewRay(NewPoint(StringToFloat(x), StringToFloat(y), StringToFloat(z)), q)
+
+	return nil
+}
+func (tt *tupletest) shapescylCylinder(varName1 string) error {
+	tt.Shapes[varName1] = NewCylinder()
+	return nil
+}
+func (tt *tupletest) tupledirectionNormalizevector(varName1, x, y, z string) error {
+	tt.Tuples[varName1] = NewVector(StringToFloat(x), StringToFloat(y), StringToFloat(z)).Normalize()
+	return nil
+}
+
+func (tt *tupletest) shapescylmaximumInfinity(varName1 string) error {
+	c, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("yyy")
+	}
+	if math.IsInf(c.GetMaximum(), 1) {
+		return nil
+	}
+	return fmt.Errorf("Not inf")
+}
+func (tt *tupletest) shapescylminimumInfinity(varName1 string) error {
+	c, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("yyy")
+	}
+	if math.IsInf(c.GetMinimum(), -1) {
+		return nil
+	}
+	return fmt.Errorf("Not -inf")
+}
+
+func (tt *tupletest) shapescylmaximum(varName1, value string) error {
+	_, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+
+	tt.Shapes[varName1].SetMaximum(StringToFloat(value))
+	return nil
+}
+func (tt *tupletest) shapescylminimum(varName1, value string) error {
+	_, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+
+	tt.Shapes[varName1].SetMinimum(StringToFloat(value))
+	return nil
+}
+
+func (tt *tupletest) shapescylclosedFalse(varName1, value string) error {
+	c, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	switch value {
+	case "false":
+		if !c.GetClosed() {
+			return nil
+		}
+	case "true":
+		if c.GetClosed() {
+			return nil
+		}
+	}
+	return fmt.Errorf("DASDF")
+
+}
+
+func (tt *tupletest) shapescylclosedTrue(varName1, value string) error {
+	STOPHERE = true
+	_, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	switch value {
+	case "false":
+		tt.Shapes[varName1].SetClosed(false)
+	case "true":
+		tt.Shapes[varName1].SetClosed(true)
+	default:
+		return fmt.Errorf("ASDF")
+	}
+	return nil
+
+}
+
+func (tt *tupletest) shapesshapeCone(varName1 string) error {
+	tt.Shapes[varName1] = NewCone()
 	return nil
 }

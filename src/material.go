@@ -145,6 +145,10 @@ func NewStripePattern(a, b Color) *StripePattern {
 	}
 }
 
+func (p *StripePattern) GetPatternType() string {
+	return "stripe"
+}
+
 func (p *StripePattern) ColorAt(point Tuple) Color {
 	if math.Mod(math.Floor(point.X), 2) == 0 {
 		return p.A
@@ -208,7 +212,9 @@ func NewGradientPattern(a, b Color) *GradientPattern {
 		Transform:   IdentityMatrix(),
 	}
 }
-
+func (p *GradientPattern) GetPatternType() string {
+	return "gradient"
+}
 func (p *GradientPattern) ColorAt(point Tuple) Color {
 	distance := p.B.Subtract(p.A)
 	fraction := point.X - math.Floor(point.X)
@@ -259,9 +265,12 @@ func NewRingPattern(a, b Color) *RingPattern {
 	return &RingPattern{
 		A:           a,
 		B:           b,
-		PatternType: "gradient",
+		PatternType: "ring",
 		Transform:   IdentityMatrix(),
 	}
+}
+func (p *RingPattern) GetPatternType() string {
+	return "ring"
 }
 
 func (p *RingPattern) ColorAt(point Tuple) Color {
@@ -309,20 +318,21 @@ type CheckerPattern struct {
 	Transform   Matrix
 }
 
+func (p *CheckerPattern) GetPatternType() string {
+	return "checker"
+}
 func NewCheckerPattern(a, b Color) *CheckerPattern {
 	return &CheckerPattern{
 		A:           a,
 		B:           b,
-		PatternType: "gradient",
+		PatternType: "checker",
 		Transform:   IdentityMatrix(),
 	}
 }
 
 func (p *CheckerPattern) ColorAt(point Tuple) Color {
-	if math.Mod(
-		math.Floor(point.X)+
-			math.Floor(point.Y)+
-			math.Floor(point.Z), 2) == 0 {
+	result := math.Mod(math.Floor(point.X)+math.Floor(point.Y)+math.Floor(point.Z), 2) == 0
+	if result {
 		return p.A
 	}
 	return p.B
