@@ -22,6 +22,12 @@ type Shaper interface {
 	SetMaximum(m float64)
 	GetClosed() bool
 	SetClosed(b bool)
+	GetShapesCount() int
+	GetShapes() map[int]Shaper
+	AddShape(s *Shaper)
+	RemoveShape(s Shaper)
+	GetParent() *Group
+	SetParent(g *Group)
 }
 
 type TestShapeType struct {
@@ -32,6 +38,7 @@ type TestShapeType struct {
 	Transform Matrix
 	Material  Material
 	SavedRay  Ray
+	Parent    *Group
 }
 
 var BaseTransform = IdentityMatrix()
@@ -43,6 +50,7 @@ func NewTestShape() *TestShapeType {
 		Transform: IdentityMatrix(),
 		Origin:    NewPoint(0, 0, 0),
 		Material:  NewMaterial(),
+		Parent:    nil,
 	}
 }
 
@@ -115,4 +123,12 @@ func (s *TestShapeType) GetMaterial() Material {
 }
 func (s *TestShapeType) SetMaterial(m Material) {
 	s.Material = m
+}
+
+func (s *TestShapeType) GetParent() *Group {
+	return s.Parent
+}
+
+func (s *TestShapeType) SetParent(g *Group) {
+	s.Parent = g
 }

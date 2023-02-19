@@ -3,7 +3,6 @@ package main
 import (
 	"math"
 	"math/rand"
-	"time"
 )
 
 type Sphere struct {
@@ -13,25 +12,28 @@ type Sphere struct {
 	Radius    float64
 	Transform Matrix
 	Material  Material
+	Parent    *Group
 }
 
+var SphereCount = 0
+
 func NewSphere() *Sphere {
-	rand.Seed(time.Now().UnixNano())
 	return &Sphere{
 		ID:        rand.Intn(100000),
 		Transform: BaseTransform,
 		Origin:    BaseOrigin,
 		Material:  BaseMaterial,
+		Parent:    nil,
 	}
 }
 
 func NewGlassSphere() *Sphere {
-	rand.Seed(time.Now().UnixNano())
 	me := Sphere{
 		ID:        rand.Intn(100000),
 		Transform: BaseTransform,
 		Origin:    BaseOrigin,
 		Material:  BaseMaterial,
+		Parent:    nil,
 	}
 	me.Material.Transparency = 1.0
 	me.Material.RefractiveIndex = 1.5
@@ -108,4 +110,12 @@ func (s *Sphere) GetMaterial() Material {
 
 func (s *Sphere) SetMaterial(m Material) {
 	s.Material = m
+}
+
+func (s *Sphere) GetParent() *Group {
+	return s.Parent
+}
+
+func (s *Sphere) SetParent(g *Group) {
+	s.Parent = g
 }

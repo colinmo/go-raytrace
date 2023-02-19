@@ -291,7 +291,6 @@ func TestFeatures(t *testing.T) {
 
 			// CHAPTER 9
 
-			ctx.Step(`^set_transform\(shapes\.([a-zA-Z0-9_]+), translation\((\d+), (\d+), (\d+)\)\)$`, tt.set_transformshapessTranslation)
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← test_shape\(\)$`, tt.shapessTest_shape)
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.transform = identity_matrix$`, tt.shapesstransformIdentity_matrix)
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.transform = translation\((.+), (.+), (.+)\)$`, tt.shapesstransformTranslation)
@@ -414,6 +413,16 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.closed ← (true|false)$`, tt.shapescylclosedTrue)
 
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← cone\(\)$`, tt.shapesshapeCone)
+
+			// 14
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← group\(\)$`, tt.shapesgGroup)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) is empty$`, tt.shapesgIsEmpty)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.parent is nothing$`, tt.shapessparentIsNothing)
+			ctx.Step(`^add_child\(shapes\.([a-zA-Z0-9_]+), shapes\.([a-zA-Z0-9_]+)\)$`, tt.add_childshapesgShapess)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) includes shapes\.([a-zA-Z0-9_]+)$`, tt.shapesgIncludesShapess)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) is not empty$`, tt.shapesgIsNotEmpty)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.parent = shapes\.([a-zA-Z0-9_]+)$`, tt.shapessparentShapesg)
+			ctx.Step(`^set_transform\(shapes\.([a-zA-Z0-9_]+), translation\((.+), (.+), (.+)\)\)$`, tt.set_transformshapessTranslation)
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -2885,7 +2894,7 @@ func (tt *tupletest) computescompspointzComputescompsover_pointz(varName1, varNa
 func (tt *tupletest) set_transformshapessTranslation(varName1, x, y, z string) error {
 	_, ok := tt.Shapes[varName1]
 	if !ok {
-		return fmt.Errorf("Computation %s not available", varName1)
+		return fmt.Errorf("Shape %s not available", varName1)
 	}
 
 	tt.Shapes[varName1].SetTransform(NewTranslation(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
@@ -2898,7 +2907,7 @@ func (tt *tupletest) shapessTest_shape(varName1 string) error {
 func (tt *tupletest) shapesstransformIdentity_matrix(varName1 string) error {
 	t, ok := tt.Shapes[varName1]
 	if !ok {
-		return fmt.Errorf("Computation %s not available", varName1)
+		return fmt.Errorf("Shape %s not available", varName1)
 	}
 
 	x := t.GetTransform()
@@ -3063,7 +3072,12 @@ func (tt *tupletest) arrayintersectionsxsObjectPlanep(varName1 string, indx int,
 	if ai[indx].Object.Equals(pl) {
 		return nil
 	}
-	return fmt.Errorf("AI[%d].O failed", indx)
+	bep := ""
+	for _, p := range tt.Shapes["g"].GetShapes() {
+		bep = fmt.Sprintf("%s\n%d", bep, p.GetID())
+	}
+	log.Fatal(ai[indx].Object.GetID(), pl.GetID(), bep)
+	return fmt.Errorf("AI[%d].O failed\n%v\n%b", indx, ai[indx].Object.GetID(), pl.GetID())
 }
 func (tt *tupletest) arrayintersectionsxsT() error {
 	return godog.ErrPending
@@ -4038,4 +4052,89 @@ func (tt *tupletest) shapescylclosedTrue(varName1, value string) error {
 func (tt *tupletest) shapesshapeCone(varName1 string) error {
 	tt.Shapes[varName1] = NewCone()
 	return nil
+}
+
+func (tt *tupletest) shapesgGroup(varName1 string) error {
+	x := NewGroup()
+	tt.Shapes[varName1] = x
+	return nil
+}
+func (tt *tupletest) shapesgIsEmpty(varName1 string) error {
+	x, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if x.GetShapesCount() == 0 {
+		return nil
+	}
+	return fmt.Errorf("How'd shapes get in there?")
+}
+
+func (tt *tupletest) shapessparentIsNothing(varName1 string) error {
+	x, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if x.GetParent() == nil {
+		return nil
+	}
+	return fmt.Errorf("damn")
+
+}
+
+var AddedShape = ""
+
+func (tt *tupletest) add_childshapesgShapess(varName1, varName2 string) error {
+	_, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	s, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	AddedShape += fmt.Sprintf("%s]%d\n", varName2, s.GetID())
+	tt.Shapes[varName1].AddShape(&s)
+	tt.Shapes[varName2] = s
+	return nil
+}
+func (tt *tupletest) shapesgIncludesShapess(varName1, varName2 string) error {
+	g, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	s, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	mike, ok := g.GetShapes()[s.GetID()]
+	if ok {
+		return nil
+	}
+	return fmt.Errorf("No child of that name %v", mike)
+}
+func (tt *tupletest) shapesgIsNotEmpty(varName1 string) error {
+	g, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if g.GetShapesCount() != 0 {
+		return nil
+	}
+	return fmt.Errorf("Found children")
+}
+func (tt *tupletest) shapessparentShapesg(varName1, varName2 string) error {
+	g, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	s, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	p := s.GetParent()
+	if p.Equals(g) {
+		return nil
+	}
+	return fmt.Errorf("Wrong parent")
 }
