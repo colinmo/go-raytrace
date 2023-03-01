@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -12,6 +14,7 @@ import (
 
 	"github.com/cucumber/godog"
 	"github.com/cucumber/messages-go/v16"
+	"github.com/spf13/pflag"
 )
 
 type tuples map[string]Tuple
@@ -31,6 +34,9 @@ type computations map[string]Computations
 type cameras map[string]Camera
 type patterns map[string]Pattern
 type floats map[string]float64
+type bounds map[string]Bounds
+type files map[string]string
+type parsers map[string]Parser
 
 type tupletest struct {
 	Tuples             tuples
@@ -50,9 +56,23 @@ type tupletest struct {
 	Cameras            cameras
 	Patterns           patterns
 	Floats             floats
+	Bounds             bounds
+	Files              files
+	Parsers            parsers
+}
+
+var opts = godog.Options{
+	Format: "progress",
+}
+
+func init() {
+	godog.BindCommandLineFlags("godog.", &opts)
 }
 
 func TestFeatures(t *testing.T) {
+	pflag.Parse()
+	opts.Paths = pflag.Args()
+
 	suite := godog.TestSuite{
 		ScenarioInitializer: func(ctx *godog.ScenarioContext) {
 			tt := &tupletest{}
@@ -75,6 +95,9 @@ func TestFeatures(t *testing.T) {
 				tt.Cameras = cameras{}
 				tt.Patterns = patterns{}
 				tt.Floats = floats{}
+				tt.Bounds = bounds{}
+				tt.Files = files{}
+				tt.Parsers = parsers{}
 				return ctx, nil
 			})
 
@@ -423,6 +446,41 @@ func TestFeatures(t *testing.T) {
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) is not empty$`, tt.shapesgIsNotEmpty)
 			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.parent = shapes\.([a-zA-Z0-9_]+)$`, tt.shapessparentShapesg)
 			ctx.Step(`^set_transform\(shapes\.([a-zA-Z0-9_]+), translation\((.+), (.+), (.+)\)\)$`, tt.set_transformshapessTranslation)
+
+			ctx.Step(`^set_transform\(shapes\.([a-zA-Z0-9_]+), rotation_y\((.*)\)\)$`, tt.set_transformshapesgRotation_y)
+			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← world_to_object\(shapes.([a-zA-Z0-9_]+), point\((.*), (.*), (.*)\)\)$`, tt.tuplepWorld_to_objectsPoint)
+
+			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) ← normal_to_world\(shapes\.([a-zA-Z0-9_]+), vector\((.*), (.*), (.*)\)\)$`, tt.tuplenNormal_to_worldshapessVector)
+			ctx.Step(`^bounds\.([a-zA-Z0-9_]+)\.minpoint = point\(inf, inf, inf\)$`, tt.bmaxpointPointinfInfInf)
+			ctx.Step(`^bounds\.([a-zA-Z0-9_]+)\.maxpoint = point\(-inf,-inf,-inf\)$`, tt.bminpointPointinfinfinf)
+			ctx.Step(`^bounds\.([a-zA-Z0-9_]+) ← new_bounds\(\)$`, tt.boundsbNew_bounds)
+
+			// 15
+
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← triangle\(([a-zA-Z0-9_]+), ([a-zA-Z0-9_]+), ([a-zA-Z0-9_]+)\)$`, tt.shapestTrianglepPP)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.e1 = vector\((.*), (.*), (.*)\)$`, tt.shapesteVector1)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.e2 = vector\((.*), (.*), (.*)\)$`, tt.shapesteVector2)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.normal = vector\((.*), (.*), (.*)\)$`, tt.shapestnormalVector)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+) = tuple\.([a-zA-Z0-9_]+)$`, tt.shapestpTuplep)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← triangle\(point\((.*), (.*), (.*)\), point\((.*), (.*), (.*)\), point\((.*), (.*), (.*)\)\)$`, tt.shapestTrianglepointPointPoint)
+			ctx.Step(`^tuple\.([a-zA-Z0-9_]+) = shapes\.([a-zA-Z0-9_]+)\.normal$`, tt.tuplenShapestnormal)
+
+			ctx.Step(`^files\.([a-zA-Z0-9_]+) ← a file containing:$`, tt.filesgibberishAFileContaining)
+			ctx.Step(`^parsers.([a-zA-Z0-9_]+) ← parse_obj_file\(files\.([a-zA-Z0-9_]+)\)$`, tt.parserParse_obj_filefilesgibberish)
+			ctx.Step(`^parsers.([a-zA-Z0-9_]+) should have ignored (\d+) lines$`, tt.parserShouldHaveIgnoredLines)
+			ctx.Step(`^parsers\.([a-zA-Z0-9_]+)\.vertices\[(\d+)\] = point\((.+), (.+), (.+)\)$`, tt.parsersparserverticesPoint)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← parsers\.([a-zA-Z0-9_]+)\.default_group$`, tt.shapesgParsersparserdefault_group)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← first child of shapes\.([a-zA-Z0-9_]+)$`, tt.shapestFirstChildOfShapesg)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.p(\d+) = parsers\.([a-zA-Z0-9_]+)\.vertices\[(\d+)\]$`, tt.shapestPParservertices)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← second child of shapes\.([a-zA-Z0-9_]+)$`, tt.shapestSecondChildOfShapesg)
+
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← third child of shapes\.([a-zA-Z0-9_]+)$`, tt.shapestThirdChildOfShapesg)
+			ctx.Step(`^files\.([a-zA-Z0-9_]+) ← the file "([^"]*)"$`, tt.filesfileTheFile)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← "([^"]*)" from parsers\.([a-zA-Z0-9_]+)$`, tt.shapesgFromParsersparser)
+
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) includes "([^"]*)" from parsers\.([a-zA-Z0-9_]+)$`, tt.shapesgIncludesFromParsersparser)
+			ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← obj_to_group\(parsers\.([a-zA-Z0-9_]+)\)$`, tt.shapesgObj_to_groupparsersparser)
+
 		},
 		Options: &godog.Options{
 			Format:   "pretty",
@@ -2032,44 +2090,7 @@ func (tt *tupletest) tuplenVector(varName1 string, xS, yS, zS string) error {
 	if a.EqualsTuple(NewVector(StringToFloat(xS), StringToFloat(yS), StringToFloat(zS))) {
 		return nil
 	}
-	return fmt.Errorf("tuple vector poop")
-}
-
-func StringToFloat(incomingString string) float64 {
-	var newNom, newDom float64
-	newFraction := strings.Split(incomingString, "/")
-	newNom = SpecificStringCases(newFraction[0])
-
-	if len(newFraction) > 1 {
-		newDom = SpecificStringCases(newFraction[1])
-	} else {
-		newDom = 1
-	}
-	return newNom / newDom
-}
-
-func SpecificStringCases(strInt string) float64 {
-	strInt = strings.Trim(strInt, " ,")
-	if strInt[0:1] == "-" {
-		return StringToFloat(strInt[1:]) * -1
-	} else if len(strInt) > 1 {
-		if strInt[0:2] == "π" {
-			return math.Pi
-		} else if len(strInt) > 2 && strInt[1:2] == "π" {
-			return StringToFloat(strInt[0:1]) * math.Pi
-		}
-		if len(strInt) > 2 && strInt[0:3] == "√" {
-			return math.Sqrt(StringToFloat(strInt[3:]))
-		}
-	}
-	var err error
-	var newNumber float64
-	newNumber, err = strconv.ParseFloat(strInt, 64)
-	if err != nil {
-		log.Fatalf("to heck with it [%s] [%s] |%s|", strInt, strInt[0:3], err)
-	}
-
-	return newNumber
+	return fmt.Errorf("tuple vector poop %v\n%v", a, NewVector(StringToFloat(xS), StringToFloat(yS), StringToFloat(zS)))
 }
 
 func (tt *tupletest) matrixmScalingRotation_z(varName1 string, xS, yS, zS, rS string) error {
@@ -2300,30 +2321,6 @@ func (tt *tupletest) colorsresultColor(varName1, r, g, b string) error {
 	if !ok {
 		return fmt.Errorf("Color %s not available", varName1)
 	}
-	/*
-		if STOPHERE {
-			log.Fatalf(
-				"\nPLANE %v\nTransform: %v\nTransparent: %v\nRefractive: %v\n\n"+
-					"SPHERE\nColor: %v\nAmbient: %v\nTransform: %v\n\n"+
-					"World: %v\n\n"+
-					"Ray: %v\n\n"+
-					"AI: %v\nID: %v\n\n"+
-					"Comps: %v\n\n",
-				tt.Shapes["floor"].GetID(),
-				tt.Shapes["floor"].GetTransform(),
-				tt.Shapes["floor"].GetMaterial().Transparency,
-				tt.Shapes["floor"].GetMaterial().RefractiveIndex,
-				tt.Shapes["ball"].GetMaterial().Color,
-				tt.Shapes["ball"].GetMaterial().Ambient,
-				tt.Shapes["ball"].GetTransform(),
-				tt.Worlds["w"],
-				tt.Rays["r"],
-				tt.ArrayIntersections["xs"],
-				tt.ArrayIntersections["xs"][0].Object.GetID(),
-				tt.Computations["comps"],
-			)
-		}
-	*/
 	if a.Equals(NewColor(StringToFloat(r), StringToFloat(g), StringToFloat(b))) {
 		return nil
 	}
@@ -2864,10 +2861,6 @@ func (tt *tupletest) computescompsover_pointzEPSILON(varName1 string) error {
 		return fmt.Errorf("Computation %s not available", varName1)
 	}
 
-	//a := tt.Intersections["i"]
-	//b := tt.Rays["r"]
-	//d := tt.Shapes["shape"]
-	//log.Fatalf("\nInt: %v\nRay: %v\nShape: %v\nComp: %v\n\n%v", a, b, d, c, tt.Shapes)
 	if c.OverPoint.Z < -epsilon/2 {
 		return nil
 	}
@@ -3058,8 +3051,6 @@ func (tt *tupletest) arrayintersectionsxsLocal_intersectplanepRayr(varName1, var
 	return nil
 }
 
-//ctx.Step(`^arrayintersections\.([a-zA-Z0-9_]+)\[(\d+)\]\.object = plane\.([a-zA-Z0-9_]+)$`, tt.arrayintersectionsxsObjectPlanep)
-
 func (tt *tupletest) arrayintersectionsxsObjectPlanep(varName1 string, indx int, varName2 string) error {
 	ai, ok := tt.ArrayIntersections[varName1]
 	if !ok {
@@ -3072,11 +3063,22 @@ func (tt *tupletest) arrayintersectionsxsObjectPlanep(varName1 string, indx int,
 	if ai[indx].Object.Equals(pl) {
 		return nil
 	}
-	bep := ""
-	for _, p := range tt.Shapes["g"].GetShapes() {
-		bep = fmt.Sprintf("%s\n%d", bep, p.GetID())
+	nrt := ""
+	for i, x := range tt.Shapes {
+		nrt = fmt.Sprintf("%s %s:%d", nrt, i, x.GetID())
 	}
-	log.Fatal(ai[indx].Object.GetID(), pl.GetID(), bep)
+	its := ""
+	for i, x := range ai {
+		its = fmt.Sprintf("%s [%d]%d:%f", its, i, x.Object.GetID(), x.T)
+	}
+	log.Fatalf(
+		"Group intersect [%d]: should be %s(%d), is %d\nIntersects = %s\n%s\n",
+		indx,
+		varName2,
+		pl.GetID(),
+		ai[indx].Object.GetID(),
+		its,
+		nrt)
 	return fmt.Errorf("AI[%d].O failed\n%v\n%b", indx, ai[indx].Object.GetID(), pl.GetID())
 }
 func (tt *tupletest) arrayintersectionsxsT() error {
@@ -4107,7 +4109,7 @@ func (tt *tupletest) shapesgIncludesShapess(varName1, varName2 string) error {
 	if !ok {
 		return fmt.Errorf("zzz")
 	}
-	mike, ok := g.GetShapes()[s.GetID()]
+	mike := g.GetShapes()[s.GetID()]
 	if ok {
 		return nil
 	}
@@ -4137,4 +4139,318 @@ func (tt *tupletest) shapessparentShapesg(varName1, varName2 string) error {
 		return nil
 	}
 	return fmt.Errorf("Wrong parent")
+}
+
+func (tt *tupletest) set_transformshapesgRotation_y(varName1, r string) error {
+	g, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	g.SetTransform(NewRotationY(StringToFloat(r)))
+	tt.Shapes[varName1] = g
+	return nil
+}
+
+func (tt *tupletest) tuplepWorld_to_objectsPoint(varName1, varName2, x, y, z string) error {
+	g, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	//log.Fatal(g.GetParent())
+	tt.Tuples[varName1] = g.WorldToObject(NewPoint(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
+	return nil
+}
+
+func (tt *tupletest) tuplenNormal_to_worldshapessVector(varName1, varName2, x, y, z string) error {
+
+	g, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+
+	tt.Tuples[varName1] = g.NormalToWorld(NewVector(StringToFloat(x), StringToFloat(y), StringToFloat(z)))
+	return nil
+}
+func (tt *tupletest) bmaxpointPointinfInfInf(varName1 string) error {
+	b, ok := tt.Bounds[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if math.IsInf(b.Maximum.X, -1) && math.IsInf(b.Maximum.Y, -1) && math.IsInf(b.Maximum.Z, -1) {
+		return nil
+	}
+	return fmt.Errorf("Bad max %v", b.Maximum)
+}
+
+func (tt *tupletest) bminpointPointinfinfinf(varName1 string) error {
+	b, ok := tt.Bounds[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if math.IsInf(b.Minimum.X, 1) && math.IsInf(b.Minimum.Y, 1) && math.IsInf(b.Minimum.Z, 1) {
+		return nil
+	}
+	return fmt.Errorf("Bad min %v", b.Minimum)
+}
+
+func (tt *tupletest) boundsbNew_bounds(varName1 string) error {
+	tt.Bounds[varName1] = *NewBounds()
+	return nil
+}
+
+/*
+ctx.Step(`^shapes\.([a-zA-Z0-9_]+) ← triangle\(([a-zA-Z0-9_]+), ([a-zA-Z0-9_]+), ([a-zA-Z0-9_]+)\)$`, tt.shapestTrianglepPP)
+ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.e1 = vector\((.*), (.*), (.*)\)$`, tt.shapesteVector)
+ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.e2 = vector\((.*), (.*), (.*)\)$`, tt.shapesteVector)
+ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.normal = vector\((.*), (.*), (.*))\)$`, tt.shapestnormalVector)
+ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.p1 = tuple\.([a-zA-Z0-9_]+)$`, tt.shapestpTuplep)
+ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.p2 = tuple\.([a-zA-Z0-9_]+)$`, tt.shapestpTuplep)
+ctx.Step(`^shapes\.([a-zA-Z0-9_]+)\.p3 = tuple\.([a-zA-Z0-9_]+)$`, tt.shapestpTuplep)
+*/
+func (tt *tupletest) shapestTrianglepPP(varName1, varName2, varName3, varName4 string) error {
+	p1, ok := tt.Tuples[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	p2, ok := tt.Tuples[varName3]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	p3, ok := tt.Tuples[varName4]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	tt.Shapes[varName1] = NewTriangle(p1, p2, p3)
+	return nil
+}
+
+func (tt *tupletest) shapesteVector1(varName1, x, y, z string) error {
+	t, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if t.GetVector("E1").EqualsTuple(NewVector(StringToFloat(x), StringToFloat(y), StringToFloat(z))) {
+		return nil
+	}
+	return fmt.Errorf("E1 vector fail")
+}
+func (tt *tupletest) shapesteVector2(varName1, x, y, z string) error {
+	t, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if t.GetVector("E2").EqualsTuple(NewVector(StringToFloat(x), StringToFloat(y), StringToFloat(z))) {
+		return nil
+	}
+	return fmt.Errorf("E2 vector fail")
+}
+
+func (tt *tupletest) shapestnormalVector(varName1, x, y, z string) error {
+
+	t, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if t.GetNormal().EqualsTuple(NewVector(StringToFloat(x), StringToFloat(y), StringToFloat(z))) {
+		return nil
+	}
+	return fmt.Errorf("Bad normal")
+}
+
+func (tt *tupletest) shapestpTuplep(varName1, varName2, varName3 string) error {
+	t, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	p, ok := tt.Tuples[varName3]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	switch varName2 {
+	case "p1":
+		if t.GetPoint("P1").EqualsTuple(p) {
+			return nil
+		}
+	case "p2":
+		if t.GetPoint("P2").EqualsTuple(p) {
+			return nil
+		}
+	case "p3":
+		if t.GetPoint("P3").EqualsTuple(p) {
+			return nil
+		}
+	}
+	return fmt.Errorf("Tuple p fail")
+}
+
+func (tt *tupletest) shapestTrianglepointPointPoint(varName1, x1, y1, z1, x2, y2, z2, x3, y3, z3 string) error {
+	tt.Shapes[varName1] = NewTriangle(
+		NewPoint(StringToFloat(x1), StringToFloat(y1), StringToFloat(z1)),
+		NewPoint(StringToFloat(x2), StringToFloat(y2), StringToFloat(z2)),
+		NewPoint(StringToFloat(x3), StringToFloat(y3), StringToFloat(z3)),
+	)
+	return nil
+}
+
+func (tt *tupletest) tuplenShapestnormal(varName1, varName2 string) error {
+	t, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	p, ok := tt.Tuples[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+
+	if p.EqualsTuple(t.GetNormal()) {
+		return nil
+	}
+	return fmt.Errorf("Tuple fail")
+}
+
+func (tt *tupletest) filesgibberishAFileContaining(varName1 string, arg1 *godog.DocString) error {
+	fname, _ := ioutil.TempFile(os.TempDir(), "xx")
+	os.WriteFile(fname.Name(), []byte(arg1.Content), 0666)
+	tt.Files[varName1] = fname.Name()
+	return nil
+}
+
+func (tt *tupletest) parserParse_obj_filefilesgibberish(varName1, varName2 string) error {
+	f, ok := tt.Files[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	tt.Parsers[varName1] = *NewParserFromFile(f)
+	return nil
+}
+
+func (tt *tupletest) parserShouldHaveIgnoredLines(varName1 string, count int) error {
+	p, ok := tt.Parsers[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if p.LinesSkipped == count {
+		return nil
+	}
+	return fmt.Errorf("Bad count of files %d vs %d", p.LinesSkipped, count)
+}
+
+func (tt *tupletest) parsersparserverticesPoint(varName1 string, i int, x, y, z string) error {
+	p, ok := tt.Parsers[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	if p.Vertices[i].EqualsTuple(NewPoint(StringToFloat(x), StringToFloat(y), StringToFloat(z))) {
+		return nil
+	}
+	return fmt.Errorf("Vertices %d mismatch", i)
+
+}
+
+func (tt *tupletest) shapesgParsersparserdefault_group(varName1, varName2 string) error {
+	p, ok := tt.Parsers[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	tt.Shapes[varName1] = p.Groups["Default"]
+
+	return nil
+}
+
+func (tt *tupletest) shapestFirstChildOfShapesg(varName1, varName2 string) error {
+	g, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	tt.Shapes[varName1] = g.GetShapes()[0]
+	return nil
+}
+
+func (tt *tupletest) shapestPParservertices(varName1 string, index1 int, varName2 string, index2 int) error {
+	t, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz1")
+	}
+	p, ok := tt.Parsers[varName2]
+	if !ok {
+		return fmt.Errorf("zzz2")
+	}
+
+	pPoint := p.Vertices[index2]
+
+	if t.GetPoint(fmt.Sprintf("P%d", index1)).EqualsTuple(pPoint) {
+		return nil
+	}
+	return fmt.Errorf("More lost than ever %d: %s[%d]\n%v\n%v", index1, varName2, index2, t.GetPoint(fmt.Sprintf("P%d", index1)), p.Vertices[index2])
+}
+
+func (tt *tupletest) shapestSecondChildOfShapesg(varName1, varName2 string) error {
+	g, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	tt.Shapes[varName1] = g.GetShapes()[1]
+	return nil
+}
+func (tt *tupletest) shapestThirdChildOfShapesg(varName1, varName2 string) error {
+	g, ok := tt.Shapes[varName2]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	tt.Shapes[varName1] = g.GetShapes()[2]
+	return nil
+}
+
+func (tt *tupletest) filesfileTheFile(varName1, fileName1 string) error {
+	tt.Files[varName1] = `e:\laboratory\coding\golang\go-raytrace\src\fixtures\` + fileName1
+	return nil
+}
+
+func (tt *tupletest) shapesgFromParsersparser(varName1, groupName1, varName2 string) error {
+	p, ok := tt.Parsers[varName2]
+	if !ok {
+		return fmt.Errorf("zzz2")
+	}
+	tt.Shapes[varName1] = p.Groups[groupName1]
+	return nil
+}
+
+func (tt *tupletest) shapesgIncludesFromParsersparser(varName1, groupName1, varName2 string) error {
+	g, ok := tt.Shapes[varName1]
+	if !ok {
+		return fmt.Errorf("zzz")
+	}
+	p, ok := tt.Parsers[varName2]
+	if !ok {
+		return fmt.Errorf("zzz2")
+	}
+	pG := p.Groups[groupName1]
+
+	failed := false
+	for _, xx := range pG.Shapes {
+		failed = true
+	inner:
+		for _, yy := range g.GetShapes() {
+			if xx.GetID() == yy.GetID() {
+				failed = false
+				break inner
+			}
+		}
+		if failed {
+			return fmt.Errorf("No match")
+		}
+	}
+	if failed {
+
+	}
+	return nil
+
+}
+func (tt *tupletest) shapesgObj_to_groupparsersparser(varName1, varName2 string) error {
+	p, ok := tt.Parsers[varName2]
+	if !ok {
+		return fmt.Errorf("zzz2")
+	}
+	tt.Shapes[varName1] = p.ToGroup()
+	return nil
 }

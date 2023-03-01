@@ -47,6 +47,14 @@ func (s *Sphere) GetSavedRay() Ray {
 func (s *Sphere) GetID() int {
 	return s.ID
 }
+func (s *Sphere) WorldToObject(p Tuple) Tuple {
+	if s.Parent != nil {
+		p = s.Parent.WorldToObject(p)
+	}
+	b := s.GetTransform()
+	c := b.Inverse()
+	return c.MultiplyTuple(p)
+}
 
 func (s *Sphere) Intersects(r Ray) map[int]Intersection {
 	return Intersect(s, r)
@@ -70,7 +78,10 @@ func (s *Sphere) LocalIntersects(r Ray) map[int]Intersection {
 }
 
 func (s *Sphere) NormalAt(p Tuple) Tuple {
-	return NormalAt(s, p)
+
+	localPoint := s.WorldToObject(p)
+	localNormal := s.LocalNormalAt(localPoint)
+	return s.NormalToWorld(localNormal)
 }
 
 func (s *Sphere) LocalNormalAt(p Tuple) Tuple {
@@ -118,4 +129,24 @@ func (s *Sphere) GetParent() *Group {
 
 func (s *Sphere) SetParent(g *Group) {
 	s.Parent = g
+}
+
+func (s *Sphere) NormalToWorld(p Tuple) Tuple {
+	b := s.GetTransform()
+	c := b.Inverse()
+	d := c.Transpose()
+	p = d.MultiplyTuple(p)
+	p.W = 0
+	p = p.Normalize()
+	if s.Parent != nil {
+		p = s.Parent.NormalToWorld(p)
+	}
+	return p
+}
+
+func (s *Sphere) Bounds() *Bounds {
+	b := NewBounds()
+	b.Minimum = NewPoint(-1, -1, -1)
+	b.Maximum = NewPoint(1, 1, 1)
+	return b
 }

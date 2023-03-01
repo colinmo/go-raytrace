@@ -16,6 +16,7 @@ type Cone struct {
 	Minimum   float64
 	Maximum   float64
 	Closed    bool
+	Parent    *Group
 }
 
 func NewCone() *Cone {
@@ -28,6 +29,7 @@ func NewCone() *Cone {
 		Minimum:   math.Inf(-1),
 		Maximum:   math.Inf(1),
 		Closed:    false,
+		Parent:    nil,
 	}
 }
 
@@ -94,8 +96,31 @@ func (s *Cone) LocalIntersects(r Ray) map[int]Intersection {
 
 	return xs
 }
+
+func (s *Cone) WorldToObject(p Tuple) Tuple {
+	if s.Parent != nil {
+		p = s.Parent.WorldToObject(p)
+	}
+	b := s.GetTransform()
+	c := b.Inverse()
+	return c.MultiplyTuple(p)
+}
+func (s *Cone) NormalToWorld(p Tuple) Tuple {
+	b := s.GetTransform()
+	c := b.Inverse()
+	d := c.Transpose()
+	p = d.MultiplyTuple(p)
+	p.W = 0
+	p = p.Normalize()
+	if s.Parent != nil {
+		p = s.Parent.NormalToWorld(p)
+	}
+	return p
+}
 func (s *Cone) NormalAt(p Tuple) Tuple {
-	return NormalAt(s, p)
+	localPoint := s.WorldToObject(p)
+	localNormal := s.LocalNormalAt(localPoint)
+	return s.NormalToWorld(localNormal)
 }
 func (s *Cone) LocalNormalAt(point Tuple) Tuple {
 	dist := math.Pow(point.X, 2) + math.Pow(point.Z, 2)
@@ -156,4 +181,12 @@ func (s *Cone) IntersectCaps(r Ray, xs map[int]Intersection) map[int]Intersectio
 		xs[len(xs)] = NewIntersection(t, s)
 	}
 	return xs
+}
+
+func (s *Cone) Bounds() *Bounds {
+	b := NewBounds()
+	b.Minimum = NewPoint(-1, -1, s.GetMinimum())
+	b.Maximum = NewPoint(1, 1, s.GetMaximum())
+
+	return b
 }

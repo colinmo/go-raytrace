@@ -23,11 +23,20 @@ type Shaper interface {
 	GetClosed() bool
 	SetClosed(b bool)
 	GetShapesCount() int
-	GetShapes() map[int]Shaper
+	GetShapes() []Shaper
 	AddShape(s *Shaper)
 	RemoveShape(s Shaper)
 	GetParent() *Group
 	SetParent(g *Group)
+	WorldToObject(p Tuple) Tuple
+	NormalToWorld(p Tuple) Tuple
+	Bounds() *Bounds
+
+	GetPoint(name string) Tuple
+	SetPoint(name string, p Tuple)
+	GetVector(name string) Tuple
+	SetVector(name string, v Tuple)
+	GetNormal() Tuple
 }
 
 type TestShapeType struct {
@@ -52,6 +61,27 @@ func NewTestShape() *TestShapeType {
 		Material:  NewMaterial(),
 		Parent:    nil,
 	}
+}
+
+func (s *TestShapeType) WorldToObject(p Tuple) Tuple {
+	if s.Parent != nil {
+		p = s.Parent.WorldToObject(p)
+	}
+	b := s.GetTransform()
+	c := b.Inverse()
+	return c.MultiplyTuple(p)
+}
+func (s *TestShapeType) NormalToWorld(p Tuple) Tuple {
+	b := s.GetTransform()
+	c := b.Inverse()
+	d := c.Transpose()
+	p = d.MultiplyTuple(p)
+	p.W = 0
+	p = p.Normalize()
+	if s.Parent != nil {
+		p = s.Parent.NormalToWorld(p)
+	}
+	return p
 }
 
 func (s *TestShapeType) Equals(t Shaper) bool {
@@ -81,7 +111,9 @@ func (s *TestShapeType) LocalIntersects(r Ray) map[int]Intersection {
 }
 
 func (s *TestShapeType) NormalAt(p Tuple) Tuple {
-	return NormalAt(s, p)
+	localPoint := s.WorldToObject(p)
+	localNormal := s.LocalNormalAt(localPoint)
+	return s.NormalToWorld(localNormal)
 }
 
 func NormalAt(s Shaper, p Tuple) Tuple {
@@ -131,4 +163,8 @@ func (s *TestShapeType) GetParent() *Group {
 
 func (s *TestShapeType) SetParent(g *Group) {
 	s.Parent = g
+}
+
+func (s *TestShapeType) Bounds() *Bounds {
+	return NewBounds()
 }

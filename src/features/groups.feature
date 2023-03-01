@@ -21,6 +21,7 @@ Feature: Groups
         And ray.r ← ray(point(0, 0, 0), vector(0, 0, 1))
         When arrayintersections.xs ← local_intersect(shapes.g, ray.r)
         Then arrayintersections.xs is empty
+
     Scenario: Intersecting a ray with a nonempty group
         Given shapes.g ← group()
         And shapes.s1 ← sphere()
@@ -38,3 +39,12 @@ Feature: Groups
         And arrayintersections.xs[1].object = shapes.s2
         And arrayintersections.xs[2].object = shapes.s1
         And arrayintersections.xs[3].object = shapes.s1
+Scenario: Intersecting a transformed group
+Given shapes.g ← group()
+And set_transform(shapes.g, scaling(2, 2, 2))
+And shapes.s ← sphere()
+And set_transform(shapes.s, translation(5, 0, 0))
+And add_child(shapes.g, shapes.s)
+When ray.r ← ray(point(10, 0, -10), vector(0, 0, 1))
+And arrayintersections.xs ← intersect(shapes.g, ray.r)
+Then arrayintersections.xs.count = 2        

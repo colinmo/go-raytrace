@@ -13,6 +13,7 @@ type Cube struct {
 	Radius    float64
 	Transform Matrix
 	Material  Material
+	Parent    *Group
 }
 
 func NewCube() *Cube {
@@ -22,6 +23,7 @@ func NewCube() *Cube {
 		Transform: BaseTransform,
 		Origin:    BaseOrigin,
 		Material:  BaseMaterial,
+		Parent:    nil,
 	}
 }
 func (s *Cube) GetType() string { return "cube" }
@@ -68,8 +70,30 @@ func CheckAxis(origin, direction float64) (float64, float64) {
 	return tmin, tmax
 }
 
+func (s *Cube) WorldToObject(p Tuple) Tuple {
+	if s.Parent != nil {
+		p = s.Parent.WorldToObject(p)
+	}
+	b := s.GetTransform()
+	c := b.Inverse()
+	return c.MultiplyTuple(p)
+}
+func (s *Cube) NormalToWorld(p Tuple) Tuple {
+	b := s.GetTransform()
+	c := b.Inverse()
+	d := c.Transpose()
+	p = d.MultiplyTuple(p)
+	p.W = 0
+	p = p.Normalize()
+	if s.Parent != nil {
+		p = s.Parent.NormalToWorld(p)
+	}
+	return p
+}
 func (s *Cube) NormalAt(p Tuple) Tuple {
-	return NormalAt(s, p)
+	localPoint := s.WorldToObject(p)
+	localNormal := s.LocalNormalAt(localPoint)
+	return s.NormalToWorld(localNormal)
 }
 
 func (s *Cube) LocalNormalAt(p Tuple) Tuple {
@@ -109,4 +133,11 @@ func (s *Cube) GetMaterial() Material {
 
 func (s *Cube) SetMaterial(m Material) {
 	s.Material = m
+}
+
+func (s *Cube) Bounds() *Bounds {
+	b := NewBounds()
+	b.Minimum = NewPoint(-1, -1, -1)
+	b.Maximum = NewPoint(1, 1, 1)
+	return b
 }

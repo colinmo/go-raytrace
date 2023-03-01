@@ -13,6 +13,7 @@ type Plane struct {
 	Radius    float64
 	Transform Matrix
 	Material  Material
+	Parent    *Group
 }
 
 func NewPlane() *Plane {
@@ -22,6 +23,7 @@ func NewPlane() *Plane {
 		Transform: BaseTransform,
 		Origin:    BaseOrigin,
 		Material:  BaseMaterial,
+		Parent:    nil,
 	}
 }
 func (s *Plane) GetType() string { return "plane" }
@@ -41,8 +43,31 @@ func (s *Plane) LocalIntersects(r Ray) map[int]Intersection {
 	return map[int]Intersection{0: NewIntersection(t, s)}
 }
 
+func (s *Plane) WorldToObject(p Tuple) Tuple {
+	if s.Parent != nil {
+		p = s.Parent.WorldToObject(p)
+	}
+	b := s.GetTransform()
+	c := b.Inverse()
+	return c.MultiplyTuple(p)
+}
+func (s *Plane) NormalToWorld(p Tuple) Tuple {
+	b := s.GetTransform()
+	c := b.Inverse()
+	d := c.Transpose()
+	p = d.MultiplyTuple(p)
+	p.W = 0
+	p = p.Normalize()
+	if s.Parent != nil {
+		p = s.Parent.NormalToWorld(p)
+	}
+	return p
+}
 func (s *Plane) NormalAt(p Tuple) Tuple {
-	return NormalAt(s, p)
+
+	localPoint := s.WorldToObject(p)
+	localNormal := s.LocalNormalAt(localPoint)
+	return s.NormalToWorld(localNormal)
 }
 
 func (s *Plane) LocalNormalAt(p Tuple) Tuple {

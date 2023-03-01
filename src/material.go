@@ -351,6 +351,7 @@ func (p *CheckerPattern) GetTransform() Matrix {
 }
 
 func (p *CheckerPattern) ColorAtObject(o Shaper, wp Tuple) Color {
+	wp = o.WorldToObject(wp)
 	x := o.GetTransform()
 	y := x.Inverse()
 	objectPoint := y.MultiplyTuple(wp)
