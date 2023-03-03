@@ -2,8 +2,6 @@ package main
 
 import (
 	"math"
-	"math/rand"
-	"time"
 )
 
 type Bounds struct {
@@ -15,10 +13,12 @@ type Bounds struct {
 
 type BoundingCube map[string]Tuple
 
+var boundCount = 0
+
 func NewBounds() *Bounds {
-	rand.Seed(time.Now().UnixNano())
+	boundCount++
 	return &Bounds{
-		ID:      rand.Intn(100000),
+		ID:      boundCount,
 		Maximum: NewPoint(math.Inf(-1), math.Inf(-1), math.Inf(-1)),
 		Minimum: NewPoint(math.Inf(1), math.Inf(1), math.Inf(1)),
 	}

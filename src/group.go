@@ -17,6 +17,7 @@ type Group struct {
 	Maximum   float64
 	Shapes    []Shaper
 	Parent    *Group
+	MyBounds  *Bounds
 }
 
 var groupIdNumber = 0
@@ -30,6 +31,7 @@ func NewGroup() *Group {
 		Material:  NewMaterial(),
 		Shapes:    []Shaper{},
 		Parent:    nil,
+		MyBounds:  nil,
 	}
 }
 
@@ -101,8 +103,10 @@ func (s *Group) NormalToWorld(p Tuple) Tuple {
 }
 func (s *Group) LocalIntersects(r Ray) map[int]Intersection {
 	xs := make(map[int]Intersection)
-	bG := s.Bounds()
-	xx := bG.Intersects(r)
+	if s.MyBounds == nil {
+		s.MyBounds = s.Bounds()
+	}
+	xx := s.MyBounds.Intersects(r)
 	if len(xx) == 0 {
 		return xs
 	}
@@ -143,9 +147,9 @@ func (s *Group) Bounds() *Bounds {
 	// Check each containing object
 	for _, o := range s.Shapes {
 		oB := o.Bounds().AsCube()
+		d := o.GetTransform()
 		for _, c := range oB {
 			// Convert to Object Space
-			d := o.GetTransform()
 			c = d.MultiplyTuple(c)
 			b.Minimum.X = math.Min(c.X, b.Minimum.X)
 			b.Minimum.Y = math.Min(c.Y, b.Minimum.Y)

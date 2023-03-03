@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"math"
-	"math/rand"
 )
 
 type Intersection struct {
@@ -12,8 +11,11 @@ type Intersection struct {
 	Object Shaper
 }
 
+var intersectionCount = 0
+
 func NewIntersection(t float64, shape Shaper) Intersection {
-	return Intersection{ID: rand.Intn(100000), T: t, Object: shape}
+	intersectionCount++
+	return Intersection{ID: intersectionCount, T: t, Object: shape}
 }
 
 func (i *Intersection) ObjectEquals(target Shaper) bool {
